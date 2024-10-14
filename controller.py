@@ -74,7 +74,7 @@ class App(ctk.CTk):
             command=None
         )
         self.tooltip_button.pack(side="left")
-        ToolTip(self.tooltip_button, "Displays subtitle box only when speech is detected. The app must be stopped for this option to save.")
+        ToolTip(self.tooltip_button, "Displays subtitle box only when speech is detected. Takes effect on next start.")
 
         self.status_label = ctk.CTkLabel(self, text="Status: Idle")
         self.status_label.pack(side="bottom", pady=(0, 10))  # Changed to pack at the bottom with padding
@@ -86,11 +86,39 @@ class App(ctk.CTk):
             self.stop_app()
 
     def start_app(self):
+        # Path configurations
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        recordings_path = os.path.join(base_dir, "recordings")
+        transcriptions_path = os.path.join(base_dir, "transcriptions.txt")
+
+        # Delete existing recordings
+        if os.path.exists(recordings_path):
+            try:
+                for filename in os.listdir(recordings_path):
+                    file_path = os.path.join(recordings_path, filename)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
+                print("Existing recordings have been deleted.", flush=True)
+            except Exception as e:
+                print(f"Error deleting recordings: {e}", flush=True)
+        else:
+            print("Recordings directory does not exist. Creating one.", flush=True)
+            os.makedirs(recordings_path)
+
+        # Empty transcriptions.txt
+        try:
+            with open(transcriptions_path, 'w') as f:
+                pass  # Truncate the file to empty it
+            print("transcriptions.txt has been emptied.", flush=True)
+        except Exception as e:
+            print(f"Error emptying transcriptions.txt: {e}", flush=True)
+
+        # Proceed to start the subprocess
         self.start_button.configure(text="Stop")
         self.status_label.configure(text="Status: Starting the app")
         intelligent = self.intelligent_mode.get()
         python_executable = sys.executable
-        main_path = os.path.join(os.path.dirname(__file__), "main.py")
+        main_path = os.path.join(base_dir, "main.py")
         args = [python_executable, "-u", main_path]  # Added "-u" for unbuffered output
         if intelligent:
             args.append("--intelligent")
