@@ -5,8 +5,12 @@ import queue
 import time
 
 class SubtitleGUI:
-    def __init__(self, update_queue):
+    def __init__(self, update_queue, intelligent_mode=False):
         self.update_queue = update_queue
+        self.intelligent_mode = intelligent_mode
+        self.last_activity_time = time.time()
+        self.should_show = False
+
         self.root = tk.Tk()
         
         # Remove window decorations (frameless window)
@@ -52,6 +56,9 @@ class SubtitleGUI:
         self.offset_x = 0
         self.offset_y = 0
 
+        if self.intelligent_mode:
+            self.root.withdraw()  # Hide window initially
+
         # Start the update loop in the main thread
         self.root.after(100, self.update_subtitles)
 
@@ -77,8 +84,19 @@ class SubtitleGUI:
             while True:
                 transcription = self.update_queue.get_nowait()
                 self.display_transcription(transcription)
+                if self.intelligent_mode:
+                    self.last_activity_time = time.time()
+                    if not self.should_show:
+                        self.root.deiconify()
+                        self.should_show = True
         except queue.Empty:
             pass
+
+        if self.intelligent_mode:
+            if self.should_show and (time.time() - self.last_activity_time > 10):
+                self.root.withdraw()
+                self.should_show = False
+
         self.root.after(100, self.update_subtitles)  # Check every 100 ms
 
     def display_transcription(self, transcription):

@@ -7,6 +7,7 @@ import transcriber
 from gui import SubtitleGUI
 import queue
 import time
+import argparse
 
 # Add the specific path to cudnn_ops_infer64_8.dll to the PATH and sys.path
 cuda_dll_path = r"C:\dev\TranscriberX\nvidia_dependencies"
@@ -34,19 +35,23 @@ def start_transcription():
         check_interval=1
     )
 
-def start_gui(update_queue):
+def start_gui(update_queue, intelligent_mode):
     """Start the GUI for displaying subtitles."""
-    gui = SubtitleGUI(update_queue)
+    gui = SubtitleGUI(update_queue, intelligent_mode)
     gui.run()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="TranscriberX Application")
+    parser.add_argument('--intelligent', action='store_true', help='Enable intelligent mode')
+    args = parser.parse_args()
+
     # Create a queue for GUI updates
     transcription_queue = transcriber.transcription_queue
 
     # Create threads for recording, transcription, and GUI
     recording_thread = threading.Thread(target=start_recording, daemon=True)
     transcription_thread = threading.Thread(target=start_transcription, daemon=True)
-    gui_thread = threading.Thread(target=start_gui, args=(transcription_queue,), daemon=True)
+    gui_thread = threading.Thread(target=start_gui, args=(transcription_queue, args.intelligent), daemon=True)
 
     # Start the threads
     recording_thread.start()
