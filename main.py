@@ -1,5 +1,12 @@
 import os
 import sys
+import ctypes
+import threading
+import recorder
+import transcriber
+from gui import SubtitleGUI
+import queue
+import time
 
 # Add the specific path to cudnn_ops_infer64_8.dll to the PATH and sys.path
 cuda_dll_path = r"C:\dev\TranscriberX\nvidia_dependencies"
@@ -9,16 +16,11 @@ sys.path.append(cuda_dll_path)
 # Explicitly add the DLL to the DLL search path
 os.add_dll_directory(cuda_dll_path)
 
-import ctypes
 try:
     ctypes.CDLL(os.path.join(cuda_dll_path, "cudnn_ops_infer64_8.dll"))
     print("Successfully loaded cudnn_ops_infer64_8.dll")
 except Exception as e:
     print(f"Error loading cudnn_ops_infer64_8.dll: {e}")
-
-import threading
-import recorder
-import transcriber
 
 def start_recording():
     """Start the audio recording process."""
@@ -32,15 +34,28 @@ def start_transcription():
         check_interval=1
     )
 
+def start_gui(update_queue):
+    """Start the GUI for displaying subtitles."""
+    gui = SubtitleGUI(update_queue)
+    gui.run()
+
 if __name__ == "__main__":
-    # Create threads for recording and transcription
-    recording_thread = threading.Thread(target=start_recording)
-    transcription_thread = threading.Thread(target=start_transcription)
+    # Create a queue for GUI updates
+    transcription_queue = transcriber.transcription_queue
+
+    # Create threads for recording, transcription, and GUI
+    recording_thread = threading.Thread(target=start_recording, daemon=True)
+    transcription_thread = threading.Thread(target=start_transcription, daemon=True)
+    gui_thread = threading.Thread(target=start_gui, args=(transcription_queue,), daemon=True)
 
     # Start the threads
     recording_thread.start()
     transcription_thread.start()
+    gui_thread.start()
 
-    # Wait for both threads to complete
-    recording_thread.join()
-    transcription_thread.join()
+    # Keep the main thread alive
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Exiting program.")

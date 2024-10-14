@@ -7,3 +7,4 @@ pyaudiowpatch
 openai-whisper
 torch
 faster-whisper
+

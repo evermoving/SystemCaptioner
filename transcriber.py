@@ -1,11 +1,16 @@
 import time
 import os
 from faster_whisper import WhisperModel
+import queue  # New import
+from gui import SubtitleGUI  # New import
 
 # Constants
 AUDIO_INPUT_DIR = "recordings"
 TRANSCRIPTION_OUTPUT = "transcriptions.txt"
 MODEL_SIZE = "small"  # Changed to "small"
+
+# Queue for GUI updates
+transcription_queue = queue.Queue()
 
 # Load the model once at the start
 print(f"Loading model: {MODEL_SIZE}")
@@ -30,7 +35,7 @@ def transcribe_audio(audio_path):
 
 def save_transcription(transcription, output_path):
     """
-    Save the transcription text to a file.
+    Save the transcription text to a file and send it to the GUI.
     
     Args:
         transcription (str): The transcribed text.
@@ -39,6 +44,8 @@ def save_transcription(transcription, output_path):
     with open(output_path, "a") as f:
         f.write(transcription + "\n")
     print(f"Transcription saved to {output_path}")
+    # Send transcription to GUI queue
+    transcription_queue.put(transcription)
 
 def monitor_audio_file(input_dir, output_path, check_interval=2):
     """
