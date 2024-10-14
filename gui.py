@@ -40,7 +40,7 @@ class SubtitleGUI:
             wrap=tk.WORD,
             bg='#2e2e2e',  # Match the window background
             fg='white',
-            font=("Helvetica", 16),
+            font=("Helvetica", 20),
             borderwidth=0,
             highlightthickness=0
         )
