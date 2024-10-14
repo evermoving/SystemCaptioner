@@ -3,6 +3,8 @@ import subprocess
 import sys
 import os
 import threading
+import queue  # New import for queue
+import time   # New import for sleep
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -46,6 +48,9 @@ class App(ctk.CTk):
         self.app_running = False
         self.process = None
 
+        # Queue to receive status updates from subprocess
+        self.status_queue = queue.Queue()
+
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app)
         self.start_button.pack(pady=(20, 10))  # Reduced bottom padding
 
@@ -86,14 +91,27 @@ class App(ctk.CTk):
         intelligent = self.intelligent_mode.get()
         python_executable = sys.executable
         main_path = os.path.join(os.path.dirname(__file__), "main.py")
-        args = [python_executable, main_path]
+        args = [python_executable, "-u", main_path]  # Added "-u" for unbuffered output
         if intelligent:
             args.append("--intelligent")
-            self.status_label.configure(text="Status: Listening for speech (Intelligent mode)")
-        else:
-            self.status_label.configure(text="Status: Listening for speech (Basic mode)")
-        self.process = subprocess.Popen(args)
+
+        # Start the subprocess with stdout and stderr piped
+        self.process = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
         self.app_running = True
+        self.status_label.configure(text="Status: Loading model...")
+
+        # Start a thread to read the subprocess output
+        threading.Thread(target=self.read_process_output, daemon=True).start()
+
+        # Start polling the queue for status updates
+        self.after(100, self.poll_status_queue)
 
     def stop_app(self):
         if self.process:
@@ -102,6 +120,41 @@ class App(ctk.CTk):
         self.start_button.configure(text="Start")
         self.status_label.configure(text="Status: Idle")
         self.app_running = False
+
+    def read_process_output(self):
+        """
+        Reads the stdout and stderr of the subprocess and puts relevant
+        messages into the status_queue.
+        """
+        if self.process.stdout:
+            for line in self.process.stdout:
+                line = line.strip()
+                print(f"transcriber.py: {line}")  # Optional: Prefix for clarity
+                if "Loading model" in line:
+                    self.status_queue.put("Status: Loading model...")
+                elif "Model loaded" in line:
+                    if self.intelligent_mode.get():
+                        self.status_queue.put("Status: Listening for speech (Intelligent mode)")
+                    else:
+                        self.status_queue.put("Status: Listening for speech (Basic mode)")
+        if self.process.stderr:
+            for line in self.process.stderr:
+                line = line.strip()
+                print(f"transcriber.py ERROR: {line}")
+                self.status_queue.put(f"Error: {line}")
+
+    def poll_status_queue(self):
+        """
+        Polls the status_queue and updates the status_label accordingly.
+        """
+        while not self.status_queue.empty():
+            try:
+                status = self.status_queue.get_nowait()
+                self.status_label.configure(text=status)
+            except queue.Empty:
+                pass
+        if self.app_running:
+            self.after(100, self.poll_status_queue)
 
 if __name__ == "__main__":
     app = App()

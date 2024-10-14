@@ -19,9 +19,9 @@ os.add_dll_directory(cuda_dll_path)
 
 try:
     ctypes.CDLL(os.path.join(cuda_dll_path, "cudnn_ops_infer64_8.dll"))
-    print("Successfully loaded cudnn_ops_infer64_8.dll")
+    print("Successfully loaded cudnn_ops_infer64_8.dll", flush=True)
 except Exception as e:
-    print(f"Error loading cudnn_ops_infer64_8.dll: {e}")
+    print(f"Error loading cudnn_ops_infer64_8.dll: {e}", flush=True)
 
 def start_recording():
     """Start the audio recording process."""
@@ -63,4 +63,4 @@ if __name__ == "__main__":
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Exiting program.")
+        print("Exiting program.", flush=True)
