@@ -8,7 +8,7 @@ CHUNK = 1024  # Number of frames per buffer
 FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNELS = 2  # Stereo
 RATE = 44100  # 44.1kHz sampling rate
-RECORD_SECONDS = 3  # Record in 3-second intervals
+RECORD_SECONDS = 5  # Record in 3-second intervals
 WAVE_OUTPUT_FILENAME = "debug.wav"
 
 def get_default_loopback_device(p):
