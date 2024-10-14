@@ -1,2 +1,6 @@
 sounddevice
 numpy
+soundcard
+comtypes
+pycaw
+pyaudiowpatch

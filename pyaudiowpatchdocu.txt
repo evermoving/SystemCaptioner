@@ -1,0 +1,118 @@
+PyAudioWPatch
+
+This fork will allow you to use the WASAPI device as loopback using PyAudio.
+So you can use speakers to record audio ✨
+
+Last Commit Wheels Downloads Py Version Latest release
+
+
+
+For whom?
+
+If you want to record sound from speakers in python, then this fork is for you. You can get recording from any device that supports WASAPI, for example, you can even record audio from Bluetooth headphones🎧
+
+    PyAudioW(indows|ASAPI)Patch come only with WMME, DirectX and WASAPI support if you need more -> create an issue
+
+How
+
+The Windows Audio Session API (WASAPI) allows you to use output devices (that support this API) in loopback mode. At the time of release, it was impossible to achieve this using the original version of PyAudio.
+
+    Note: Now WASAPI loopback devices are duplicated at the end of the list as virtual devices. That is, to record from speakers, you need to use not just a WASAPI device, but its loopback analogue. All loopback devices are input devices.
+
+How to use
+
+Read -> Install -> Enjoy! ↣ Press ⭐
+Installation
+
+pip install PyAudioWPatch
+
+    Wheels are available for Windows, Python 3.{7,8,9,10,11,12}.
+    All wheels support APIs: WMME, WASAPI, DirectX(DSound).
+
+In code
+
+With new features:
+
+import pyaudiowpatch as pyaudio
+
+with pyaudio.PyAudio() as p:
+    # Open PyA manager via context manager
+    with p.open(...) as stream:
+        # Open audio stream via context manager
+        # Do some stuff
+        ...
+
+Or in original PyAudio way:
+
+import pyaudiowpatch as pyaudio
+
+p = pyaudio.PyAudio()
+stream = p.open(...)
+
+# Do some stuff
+...
+
+stream.stop_stream()
+stream.close()
+
+# close PyAudio
+p.terminate()
+
+Difference with PyAudio
+
+    The behavior of all standard methods is unchanged
+    Added several life-improving methods
+    Fixed problem with name encoding
+    Ability to record audio from WASAPI loopback devices (see example)
+
+More detailed
+
+    new methods:
+        get_host_api_info_generator - Iterate over all Host APIs
+        get_device_info_generator - Iterate over all devices
+        get_device_info_generator_by_host_api - Iterate over all devices, by specific Host API(index/type)
+        get_loopback_device_info_generator - Iterate over all devices(with loopback mode)
+        print_detailed_system_info - Print some info about Host Api and devices
+        get_default_wasapi_loopback - Return loopback for default speakers
+        get_wasapi_loopback_analogue_by_index - Return loopback for device via index
+        get_wasapi_loopback_analogue_by_dict - Return loopback for device related to info_dict
+        get_default_wasapi_device - Return default (out/in)put device for WASAPI driver
+
+    new features:
+        Context manager support, for PyAudio(manager) and Stream classes
+        Run python -m pyaudiowpatch to get list of devices(like print_detailed_system_info call)
+
+Examples:
+
+    🆕 Sequential recording from speakers
+    Play sine, using 'new context manager'
+    Record audio from default speakers
+    Simple recording app
+    Cross-platform concept (Not example)
+
+Sources
+
+The following were taken as a basis:
+
+    PortAudio v19 [8b6d16f26ad660e68a97743842ac29b939f3c0c1]
+    PyAudio v0.2.12
+
+How to build manually
+Build PortAudio (using the instructions in the README)
+Install python
+run in the PyAudioWPatch directory:
+
+python setup.py install
+
+    ???
+    Profit.
+
+Also you can build wheels:
+
+    pip install cibuildwheel
+    Run in Cygwin:
+
+    ./cygwin_cibuildwheel_build.sh
+
+    Get your wheels in the ./wheelhouse folder
+
