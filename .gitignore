@@ -1,5 +1,6 @@
 debug.wav
 recordings
+nvidia_dependencies
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
