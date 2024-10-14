@@ -1,3 +1,21 @@
+import os
+import sys
+
+# Add the specific path to cudnn_ops_infer64_8.dll to the PATH and sys.path
+cuda_dll_path = r"C:\dev\TranscriberX\nvidia_dependencies"
+os.environ['PATH'] = f"{cuda_dll_path}{os.pathsep}{os.environ['PATH']}"
+sys.path.append(cuda_dll_path)
+
+# Explicitly add the DLL to the DLL search path
+os.add_dll_directory(cuda_dll_path)
+
+import ctypes
+try:
+    ctypes.CDLL(os.path.join(cuda_dll_path, "cudnn_ops_infer64_8.dll"))
+    print("Successfully loaded cudnn_ops_infer64_8.dll")
+except Exception as e:
+    print(f"Error loading cudnn_ops_infer64_8.dll: {e}")
+
 import threading
 import recorder
 import transcriber
