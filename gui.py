@@ -93,7 +93,7 @@ class SubtitleGUI:
             pass
 
         if self.intelligent_mode:
-            if self.should_show and (time.time() - self.last_activity_time > 10):
+            if self.should_show and (time.time() - self.last_activity_time > 4):
                 self.root.withdraw()
                 self.should_show = False
 
