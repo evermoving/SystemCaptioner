@@ -1,6 +1,6 @@
-import whisper
 import time
 import os
+from faster_whisper import WhisperModel
 
 # Constants
 AUDIO_INPUT = "debug.wav"
@@ -9,7 +9,7 @@ MODEL_SIZE = "small"  # Changed to "small"
 
 def transcribe_audio(audio_path, model_size=MODEL_SIZE):
     """
-    Transcribe the given audio file using Whisper model.
+    Transcribe the given audio file using Faster Whisper model.
     
     Args:
         audio_path (str): Path to the audio file to transcribe.
@@ -19,11 +19,12 @@ def transcribe_audio(audio_path, model_size=MODEL_SIZE):
         str: Transcribed text.
     """
     print(f"Loading model: {model_size}")
-    model = whisper.load_model(model_size)
+    model = WhisperModel(model_size)  # Use WhisperModel from faster-whisper
     print("Model loaded. Starting transcription...")
-    result = model.transcribe(audio_path)
+    segments, _ = model.transcribe(audio_path)  # Adjusted for faster-whisper
+    transcription = " ".join(segment.text for segment in segments)  # Combine segments
     print("Transcription completed.")
-    return result["text"].strip()
+    return transcription.strip()
 
 def save_transcription(transcription, output_path):
     """
