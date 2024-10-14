@@ -5,9 +5,13 @@ import os
 import threading
 import queue  # New import for queue
 import time   # New import for sleep
+import configparser  # New import for config handling
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
+
+# Constants
+CONFIG_FILE = "config.ini"
 
 class ToolTip:
     """
@@ -51,6 +55,14 @@ class App(ctk.CTk):
         # Queue to receive status updates from subprocess
         self.status_queue = queue.Queue()
 
+        # Load configuration
+        self.config = configparser.ConfigParser()
+        self.load_config()
+
+        # Initialize the Intelligent mode and CUDA based on config
+        self.intelligent_mode.set(self.config.getboolean('Settings', 'mode'))
+        self.cuda_enabled = self.config.getboolean('Settings', 'cuda')
+
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app)
         self.start_button.pack(pady=(20, 10))  # Reduced bottom padding
 
@@ -60,7 +72,8 @@ class App(ctk.CTk):
         self.intelligent_checkbox = ctk.CTkCheckBox(
             self.checkbox_frame, 
             text="Intelligent mode", 
-            variable=self.intelligent_mode
+            variable=self.intelligent_mode,
+            command=self.save_config  # Save config on change
         )
         self.intelligent_checkbox.pack(side="left", padx=(0, 10))
 
@@ -78,6 +91,28 @@ class App(ctk.CTk):
 
         self.status_label = ctk.CTkLabel(self, text="Status: Idle")
         self.status_label.pack(side="bottom", pady=(0, 10))  # Changed to pack at the bottom with padding
+
+    def load_config(self):
+        """Load the configuration from config.ini or create default if not exists."""
+        if not os.path.exists(CONFIG_FILE):
+            self.create_default_config()
+        self.config.read(CONFIG_FILE)
+
+    def create_default_config(self):
+        """Create a default config.ini file with basic settings."""
+        self.config['Settings'] = {
+            'mode': 'False',    # Default mode is basic (False)
+            'cuda': 'True'      # Default CUDA is enabled (True)
+        }
+        with open(CONFIG_FILE, 'w') as configfile:
+            self.config.write(configfile)
+
+    def save_config(self):
+        """Save the current settings to config.ini."""
+        self.config['Settings']['mode'] = str(self.intelligent_mode.get())
+        # CUDA is managed manually in config.ini; no UI element to change it
+        with open(CONFIG_FILE, 'w') as configfile:
+            self.config.write(configfile)
 
     def toggle_app(self):
         if not self.app_running:
@@ -117,11 +152,14 @@ class App(ctk.CTk):
         self.start_button.configure(text="Stop")
         self.status_label.configure(text="Status: Starting the app")
         intelligent = self.intelligent_mode.get()
+        cuda = self.cuda_enabled
         python_executable = sys.executable
         main_path = os.path.join(base_dir, "main.py")
         args = [python_executable, "-u", main_path]  # Added "-u" for unbuffered output
         if intelligent:
             args.append("--intelligent")
+        if cuda:
+            args.append("--cuda")
 
         # Start the subprocess with stdout and stderr piped
         self.process = subprocess.Popen(
