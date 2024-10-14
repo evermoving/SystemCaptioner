@@ -9,7 +9,7 @@ def start_recording():
 def start_transcription():
     """Start the audio transcription process."""
     transcriber.monitor_audio_file(
-        transcriber.AUDIO_INPUT, 
+        transcriber.AUDIO_INPUT_DIR,  # Corrected attribute name
         transcriber.TRANSCRIPTION_OUTPUT
     )
 
@@ -25,4 +25,3 @@ if __name__ == "__main__":
     # Wait for both threads to complete
     recording_thread.join()
     transcription_thread.join()
-

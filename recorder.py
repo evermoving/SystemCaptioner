@@ -2,14 +2,15 @@ import pyaudiowpatch as pyaudio
 import wave
 import time
 import threading
+import os
 
 # Constants
 CHUNK = 1024  # Number of frames per buffer
 FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNELS = 2  # Stereo
 RATE = 44100  # 44.1kHz sampling rate
-RECORD_SECONDS = 5  # Record in 3-second intervals
-WAVE_OUTPUT_FILENAME = "debug.wav"
+RECORD_SECONDS = 5  # Record in 5-second intervals
+OUTPUT_DIR = "recordings"  # Directory to save recordings
 
 def get_default_loopback_device(p):
     """Get the default loopback device."""
@@ -25,6 +26,9 @@ def save_audio(frames, filename):
 
 def record_audio():
     """Record audio from the default speaker and save it to a file."""
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+
     with pyaudio.PyAudio() as p:
         # Get the default loopback device
         loopback_device = get_default_loopback_device(p)
@@ -48,8 +52,11 @@ def record_audio():
 
                 print("Finished recording.")
 
+                # Generate a unique filename
+                filename = os.path.join(OUTPUT_DIR, f"recording_{int(time.time())}.wav")
+
                 # Start a new thread to save the audio
-                threading.Thread(target=save_audio, args=(frames, WAVE_OUTPUT_FILENAME)).start()
+                threading.Thread(target=save_audio, args=(frames, filename)).start()
 
 if __name__ == "__main__":
     record_audio()

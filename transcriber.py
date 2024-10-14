@@ -3,7 +3,7 @@ import os
 from faster_whisper import WhisperModel
 
 # Constants
-AUDIO_INPUT = "debug.wav"
+AUDIO_INPUT_DIR = "recordings"
 TRANSCRIPTION_OUTPUT = "transcriptions.txt"
 MODEL_SIZE = "small"  # Changed to "small"
 
@@ -22,7 +22,7 @@ def transcribe_audio(audio_path):
     Returns:
         str: Transcribed text.
     """
-    print("Starting transcription...")
+    print(f"Starting transcription for {audio_path}...")
     segments, _ = model.transcribe(audio_path)  # Adjusted for faster-whisper
     transcription = " ".join(segment.text for segment in segments)  # Combine segments
     print("Transcription completed.")
@@ -40,30 +40,28 @@ def save_transcription(transcription, output_path):
         f.write(transcription + "\n")
     print(f"Transcription saved to {output_path}")
 
-def monitor_audio_file(audio_path, output_path, check_interval=10):
+def monitor_audio_file(input_dir, output_path, check_interval=10):
     """
-    Continuously monitor the audio file for new recordings and transcribe them.
+    Continuously monitor the directory for new audio files and transcribe them.
     
     Args:
-        audio_path (str): Path to the audio file to monitor.
+        input_dir (str): Directory to monitor for audio files.
         output_path (str): Path to save the transcriptions.
         check_interval (int): Time in seconds between checks.
     """
-    last_modified_time = 0
+    processed_files = set()
     while True:
-        if os.path.exists(audio_path):
-            current_modified_time = os.path.getmtime(audio_path)
-            if current_modified_time != last_modified_time:
+        for filename in os.listdir(input_dir):
+            file_path = os.path.join(input_dir, filename)
+            if file_path not in processed_files:
                 try:
-                    print(f"Transcribing {audio_path}...")
-                    transcription = transcribe_audio(audio_path)
+                    print(f"Transcribing {file_path}...")
+                    transcription = transcribe_audio(file_path)
                     save_transcription(transcription, output_path)
-                    last_modified_time = current_modified_time
+                    processed_files.add(file_path)
                 except Exception as e:
                     print(f"Error during transcription: {e}")
-        else:
-            print(f"Waiting for {audio_path} to be available...")
         time.sleep(check_interval)
 
 if __name__ == "__main__":
-    monitor_audio_file(AUDIO_INPUT, TRANSCRIPTION_OUTPUT)
+    monitor_audio_file(AUDIO_INPUT_DIR, TRANSCRIPTION_OUTPUT)
