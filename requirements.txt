@@ -4,5 +4,5 @@ soundcard
 comtypes
 pycaw
 pyaudiowpatch
-whisper
+openai-whisper
 torch
