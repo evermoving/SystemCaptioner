@@ -27,12 +27,13 @@ def start_recording():
     """Start the audio recording process."""
     recorder.record_audio()
 
-def start_transcription():
+def start_transcription(device):
     """Start the audio transcription process."""
     transcriber.monitor_audio_file(
         transcriber.AUDIO_INPUT_DIR,
         transcriber.TRANSCRIPTION_OUTPUT,
-        check_interval=1
+        check_interval=1,
+        device=device
     )
 
 def start_gui(update_queue, intelligent_mode):
@@ -43,14 +44,18 @@ def start_gui(update_queue, intelligent_mode):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TranscriberX Application")
     parser.add_argument('--intelligent', action='store_true', help='Enable intelligent mode')
+    parser.add_argument('--cuda', action='store_true', help='Enable CUDA for transcription')
     args = parser.parse_args()
 
     # Create a queue for GUI updates
     transcription_queue = transcriber.transcription_queue
 
+    # Determine device based on '--cuda' flag
+    device = "cuda" if args.cuda else "cpu"
+
     # Create threads for recording, transcription, and GUI
     recording_thread = threading.Thread(target=start_recording, daemon=True)
-    transcription_thread = threading.Thread(target=start_transcription, daemon=True)
+    transcription_thread = threading.Thread(target=start_transcription, args=(device,), daemon=True)
     gui_thread = threading.Thread(target=start_gui, args=(transcription_queue, args.intelligent), daemon=True)
 
     # Start the threads

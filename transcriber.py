@@ -12,16 +12,27 @@ MODEL_SIZE = "medium"  # Changed to "small"
 # Queue for GUI updates
 transcription_queue = queue.Queue()
 
-# Load the model once at the start
-print(f"Loading model: {MODEL_SIZE}", flush=True)
-model = WhisperModel(MODEL_SIZE, device="cuda")  # Changed to "cuda"
-print("Model loaded.", flush=True)
+def initialize_model(device):
+    """
+    Initialize the WhisperModel with the specified device.
 
-def transcribe_audio(audio_path):
+    Args:
+        device (str): The device to use ('cuda' or 'cpu').
+
+    Returns:
+        WhisperModel: The initialized model.
+    """
+    print(f"Loading model: {MODEL_SIZE} on {device}", flush=True)
+    model = WhisperModel(MODEL_SIZE, device=device)
+    print("Model loaded.", flush=True)
+    return model
+
+def transcribe_audio(model, audio_path):
     """
     Transcribe the given audio file using the preloaded Faster Whisper model.
     
     Args:
+        model (WhisperModel): The initialized Whisper model.
         audio_path (str): Path to the audio file to transcribe.
         
     Returns:
@@ -47,7 +58,7 @@ def save_transcription(transcription, output_path):
     # Send transcription to GUI queue
     transcription_queue.put(transcription)
 
-def monitor_audio_file(input_dir, output_path, check_interval=2):
+def monitor_audio_file(input_dir, output_path, check_interval=2, device="cuda"):
     """
     Continuously monitor the directory for new audio files and transcribe them.
     
@@ -55,15 +66,17 @@ def monitor_audio_file(input_dir, output_path, check_interval=2):
         input_dir (str): Directory to monitor for audio files.
         output_path (str): Path to save the transcriptions.
         check_interval (int): Time in seconds between checks.
+        device (str): Device to use for transcription ('cuda' or 'cpu').
     """
     processed_files = set()
+    model = initialize_model(device)
     while True:
         for filename in os.listdir(input_dir):
             file_path = os.path.join(input_dir, filename)
             if file_path not in processed_files:
                 try:
                     print(f"Transcribing {file_path}...", flush=True)
-                    transcription = transcribe_audio(file_path)
+                    transcription = transcribe_audio(model, file_path)
                     save_transcription(transcription, output_path)
                     processed_files.add(file_path)
                 except Exception as e:
