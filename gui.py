@@ -22,7 +22,7 @@ class SubtitleGUI:
         self.root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
         
         # Make window semi-transparent
-        self.root.attributes("-alpha", 0.8)  # Range: 0.0 (fully transparent) to 1.0 (fully opaque)
+        self.root.attributes("-alpha", 0.9)  # Range: 0.0 (fully transparent) to 1.0 (fully opaque)
         
         # Set window to be always on top
         self.root.attributes("-topmost", True)
