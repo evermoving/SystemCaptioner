@@ -9,7 +9,7 @@ MODEL_SIZE = "small"  # Changed to "small"
 
 # Load the model once at the start
 print(f"Loading model: {MODEL_SIZE}")
-model = WhisperModel(MODEL_SIZE, device="cpu")
+model = WhisperModel(MODEL_SIZE, device="cuda")  # Changed to "cuda"
 print("Model loaded.")
 
 def transcribe_audio(audio_path):
