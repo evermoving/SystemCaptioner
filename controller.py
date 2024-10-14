@@ -9,7 +9,7 @@ ctk.set_default_color_theme("dark-blue")
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Controller")
+        self.title("Sytem Subtitler")
         self.geometry("300x150")
         self.resizable(False, False)
 
