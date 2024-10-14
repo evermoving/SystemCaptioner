@@ -11,6 +11,7 @@ CHANNELS = 2  # Stereo
 RATE = 44100  # 44.1kHz sampling rate
 RECORD_SECONDS = 3  # Record in 2-second intervals
 OUTPUT_DIR = "recordings"  # Directory to save recordings
+MAX_FILES = 10  # Maximum number of files to keep
 
 def get_default_loopback_device(p):
     """Get the default loopback device."""
@@ -23,6 +24,15 @@ def save_audio(frames, filename):
         wf.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
         wf.setframerate(RATE)
         wf.writeframes(b''.join(frames))
+
+def cleanup_old_files():
+    """Delete old WAV files, keeping only the most recent MAX_FILES."""
+    files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.wav')]
+    files.sort(key=lambda x: os.path.getmtime(os.path.join(OUTPUT_DIR, x)), reverse=True)
+    
+    for old_file in files[MAX_FILES:]:
+        os.remove(os.path.join(OUTPUT_DIR, old_file))
+        print(f"Deleted old file: {old_file}")
 
 def record_audio():
     """Record audio from the default speaker and save it to a file."""
@@ -57,6 +67,9 @@ def record_audio():
 
                 # Start a new thread to save the audio
                 threading.Thread(target=save_audio, args=(frames, filename)).start()
+                
+                # Clean up old files after saving new recording
+                cleanup_old_files()
 
 if __name__ == "__main__":
     record_audio()
