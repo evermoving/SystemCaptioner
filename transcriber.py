@@ -5,7 +5,7 @@ import os
 # Constants
 AUDIO_INPUT = "debug.wav"
 TRANSCRIPTION_OUTPUT = "transcriptions.txt"
-MODEL_SIZE = "tiny"  # You can choose "tiny", "base", "small", "medium", "large"
+MODEL_SIZE = "small"  # Changed to "small"
 
 def transcribe_audio(audio_path, model_size=MODEL_SIZE):
     """
@@ -18,8 +18,11 @@ def transcribe_audio(audio_path, model_size=MODEL_SIZE):
     Returns:
         str: Transcribed text.
     """
+    print(f"Loading model: {model_size}")
     model = whisper.load_model(model_size)
+    print("Model loaded. Starting transcription...")
     result = model.transcribe(audio_path)
+    print("Transcription completed.")
     return result["text"].strip()
 
 def save_transcription(transcription, output_path):
@@ -32,8 +35,9 @@ def save_transcription(transcription, output_path):
     """
     with open(output_path, "a") as f:
         f.write(transcription + "\n")
+    print(f"Transcription saved to {output_path}")
 
-def monitor_audio_file(audio_path, output_path, check_interval=5):
+def monitor_audio_file(audio_path, output_path, check_interval=10):
     """
     Continuously monitor the audio file for new recordings and transcribe them.
     
@@ -51,12 +55,12 @@ def monitor_audio_file(audio_path, output_path, check_interval=5):
                     print(f"Transcribing {audio_path}...")
                     transcription = transcribe_audio(audio_path)
                     save_transcription(transcription, output_path)
-                    print(f"Transcription saved to {output_path}")
                     last_modified_time = current_modified_time
                 except Exception as e:
                     print(f"Error during transcription: {e}")
+        else:
+            print(f"Waiting for {audio_path} to be available...")
         time.sleep(check_interval)
 
 if __name__ == "__main__":
     monitor_audio_file(AUDIO_INPUT, TRANSCRIPTION_OUTPUT)
-
