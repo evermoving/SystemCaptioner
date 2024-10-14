@@ -23,8 +23,8 @@ def transcribe_audio(audio_path):
         str: Transcribed text.
     """
     print(f"Starting transcription for {audio_path}...")
-    segments, _ = model.transcribe(audio_path)  # Adjusted for faster-whisper
-    transcription = " ".join(segment.text for segment in segments)  # Combine segments
+    segments, _ = model.transcribe(audio_path, beam_size=1, vad_filter=True, word_timestamps=True)
+    transcription = " ".join(segment.text for segment in segments)
     print("Transcription completed.")
     return transcription.strip()
 
@@ -40,7 +40,7 @@ def save_transcription(transcription, output_path):
         f.write(transcription + "\n")
     print(f"Transcription saved to {output_path}")
 
-def monitor_audio_file(input_dir, output_path, check_interval=10):
+def monitor_audio_file(input_dir, output_path, check_interval=2):
     """
     Continuously monitor the directory for new audio files and transcribe them.
     

@@ -9,7 +9,7 @@ CHUNK = 1024  # Number of frames per buffer
 FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNELS = 2  # Stereo
 RATE = 44100  # 44.1kHz sampling rate
-RECORD_SECONDS = 5  # Record in 5-second intervals
+RECORD_SECONDS = 3  # Record in 2-second intervals
 OUTPUT_DIR = "recordings"  # Directory to save recordings
 
 def get_default_loopback_device(p):

@@ -9,8 +9,9 @@ def start_recording():
 def start_transcription():
     """Start the audio transcription process."""
     transcriber.monitor_audio_file(
-        transcriber.AUDIO_INPUT_DIR,  # Corrected attribute name
-        transcriber.TRANSCRIPTION_OUTPUT
+        transcriber.AUDIO_INPUT_DIR,
+        transcriber.TRANSCRIPTION_OUTPUT,
+        check_interval=1
     )
 
 if __name__ == "__main__":
