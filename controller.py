@@ -77,14 +77,14 @@ class App(ctk.CTk):
             variable=self.intelligent_mode,
             command=self.save_config  # Save config on change
         )
-        self.intelligent_checkbox.pack(side="left", padx=(0, 10))
+        self.intelligent_checkbox.pack(pady=(0, 5))  # Added vertical padding
 
-        # Tooltip for Intelligent Mode (Optional: If needed)
-        # self.intelligent_tooltip = ToolTip(self.intelligent_checkbox, "Enables intelligent subtitle display.")
+        # Run on GPU Checkbox (moved to a new line)
+        self.gpu_frame = ctk.CTkFrame(self)
+        self.gpu_frame.pack(pady=(0, 10))
 
-        # Run on GPU Checkbox
         self.gpu_checkbox = ctk.CTkCheckBox(
-            self.checkbox_frame,
+            self.gpu_frame,
             text="Run on GPU",
             variable=self.gpu_enabled,
             command=self.save_config  # Save config on change
@@ -93,7 +93,7 @@ class App(ctk.CTk):
 
         # Tooltip for GPU Checkbox
         self.gpu_tooltip_button = ctk.CTkButton(
-            self.checkbox_frame,
+            self.gpu_frame,
             text="?",
             width=25,
             height=25,
