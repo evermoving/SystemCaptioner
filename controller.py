@@ -45,11 +45,10 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Subtitler")
-        self.geometry("350x200")  # Increased width to accommodate tooltips
+        self.geometry("300x150")
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
-        self.gpu_enabled = ctk.BooleanVar()  # New BooleanVar for GPU checkbox
         self.app_running = False
         self.process = None
 
@@ -62,7 +61,7 @@ class App(ctk.CTk):
 
         # Initialize the Intelligent mode and CUDA based on config
         self.intelligent_mode.set(self.config.getboolean('Settings', 'mode'))
-        self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))  # Initialize GPU checkbox
+        self.cuda_enabled = self.config.getboolean('Settings', 'cuda')
 
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app)
         self.start_button.pack(pady=(20, 10))  # Reduced bottom padding
@@ -70,7 +69,6 @@ class App(ctk.CTk):
         self.checkbox_frame = ctk.CTkFrame(self)
         self.checkbox_frame.pack(pady=(0, 10))  # Reduced top padding
 
-        # Intelligent Mode Checkbox
         self.intelligent_checkbox = ctk.CTkCheckBox(
             self.checkbox_frame, 
             text="Intelligent mode", 
@@ -79,33 +77,17 @@ class App(ctk.CTk):
         )
         self.intelligent_checkbox.pack(side="left", padx=(0, 10))
 
-        # Tooltip for Intelligent Mode (Optional: If needed)
-        # self.intelligent_tooltip = ToolTip(self.intelligent_checkbox, "Enables intelligent subtitle display.")
-
-        # Run on GPU Checkbox
-        self.gpu_checkbox = ctk.CTkCheckBox(
-            self.checkbox_frame,
-            text="Run on GPU",
-            variable=self.gpu_enabled,
-            command=self.save_config  # Save config on change
-        )
-        self.gpu_checkbox.pack(side="left", padx=(0, 5))
-
-        # Tooltip for GPU Checkbox
-        self.gpu_tooltip_button = ctk.CTkButton(
+        self.tooltip_button = ctk.CTkButton(
             self.checkbox_frame,
             text="?",
-            width=25,
-            height=25,
+            width=30,
+            height=30,
             fg_color="transparent",
             hover_color="grey",
             command=None
         )
-        self.gpu_tooltip_button.pack(side="left")
-        ToolTip(
-            self.gpu_tooltip_button, 
-            "Disabling this will run the app on CPU and result in much slower transcription."
-        )
+        self.tooltip_button.pack(side="left")
+        ToolTip(self.tooltip_button, "Displays subtitle box only when speech is detected. Takes effect on next start.")
 
         self.status_label = ctk.CTkLabel(self, text="Status: Idle")
         self.status_label.pack(side="bottom", pady=(0, 10))  # Changed to pack at the bottom with padding
@@ -128,7 +110,7 @@ class App(ctk.CTk):
     def save_config(self):
         """Save the current settings to config.ini."""
         self.config['Settings']['mode'] = str(self.intelligent_mode.get())
-        self.config['Settings']['cuda'] = str(self.gpu_enabled.get())  # Save GPU setting
+        # CUDA is managed manually in config.ini; no UI element to change it
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
 
@@ -168,9 +150,9 @@ class App(ctk.CTk):
 
         # Proceed to start the subprocess
         self.start_button.configure(text="Stop")
-        self.status_label.configure(text="Status: Loading model...")
+        self.status_label.configure(text="Status: Starting the app")
         intelligent = self.intelligent_mode.get()
-        cuda = self.gpu_enabled.get()  # Use GPU setting from checkbox
+        cuda = self.cuda_enabled
         python_executable = sys.executable
         main_path = os.path.join(base_dir, "main.py")
         args = [python_executable, "-u", main_path]  # Added "-u" for unbuffered output
