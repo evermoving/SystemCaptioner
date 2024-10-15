@@ -19,6 +19,9 @@ def get_default_loopback_device(p):
 
 def save_audio(frames, filename):
     """Save the recorded audio frames to a WAV file."""
+    if not frames:  # Check if frames is empty
+        print(f"Warning: No audio data to save for {filename}")
+        return
     with wave.open(filename, 'wb') as wf:
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
@@ -60,7 +63,7 @@ def record_audio():
                     data = stream.read(CHUNK)
                     frames.append(data)
 
-                print("Finished recording.")
+                print(f"Finished recording. Captured {len(frames)} frames.")
 
                 # Generate a unique filename
                 filename = os.path.join(OUTPUT_DIR, f"recording_{int(time.time())}.wav")

@@ -8,4 +8,5 @@ openai-whisper
 torch
 faster-whisper
 customtkinter
+soundfile
 

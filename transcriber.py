@@ -4,6 +4,7 @@ import configparser
 from faster_whisper import WhisperModel
 import queue  # New import
 from gui import SubtitleGUI  # New import
+import soundfile as sf
 
 # Constants
 AUDIO_INPUT_DIR = "recordings"
@@ -35,15 +36,17 @@ def initialize_model(device):
 def transcribe_audio(model, audio_path):
     """
     Transcribe the given audio file using the preloaded Faster Whisper model.
-    
-    Args:
-        model (WhisperModel): The initialized Whisper model.
-        audio_path (str): Path to the audio file to transcribe.
-        
-    Returns:
-        str: Transcribed text.
     """
     print(f"Starting transcription for {audio_path}...", flush=True)
+    try:
+        with sf.SoundFile(audio_path) as sound_file:
+            if sound_file.frames == 0:
+                print(f"Warning: Empty audio file: {audio_path}")
+                return ""
+    except Exception as e:
+        print(f"Error reading audio file {audio_path}: {e}")
+        return ""
+
     segments, _ = model.transcribe(audio_path, beam_size=1, vad_filter=True, word_timestamps=True)
     transcription = " ".join(segment.text for segment in segments)
     print("Transcription completed.", flush=True)
@@ -82,10 +85,11 @@ def monitor_audio_file(input_dir, output_path, check_interval=2, device="cuda"):
                 try:
                     print(f"Transcribing {file_path}...", flush=True)
                     transcription = transcribe_audio(model, file_path)
-                    save_transcription(transcription, output_path)
+                    if transcription:
+                        save_transcription(transcription, output_path)
                     processed_files.add(file_path)
                 except Exception as e:
-                    print(f"Error during transcription: {e}", flush=True)
+                    print(f"Error during transcription of {file_path}: {e}", flush=True)
         time.sleep(check_interval)
 
 if __name__ == "__main__":
