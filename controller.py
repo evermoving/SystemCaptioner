@@ -66,7 +66,7 @@ class App(ctk.CTk):
         self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))  # Initialize GPU checkbox
         self.model_selection.set(self.config.get('Settings', 'model'))  # Initialize model selection
 
-        self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app)
+        self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app, fg_color="green", hover_color="dark green")
         self.start_button.pack(pady=(25, 35))  # Increased bottom padding
 
         # Checkbox frame for GPU and Intelligent mode
@@ -184,8 +184,10 @@ class App(ctk.CTk):
     def toggle_app(self):
         if not self.app_running:
             self.start_app()
+            self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
         else:
             self.stop_app()
+            self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
 
     def start_app(self):
         # Path configurations
@@ -216,7 +218,7 @@ class App(ctk.CTk):
             print(f"Error emptying transcriptions.txt: {e}", flush=True)
 
         # Proceed to start the subprocess
-        self.start_button.configure(text="Stop")
+        self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
         self.status_label.configure(text="Status: Loading model...")
         intelligent = self.intelligent_mode.get()
         cuda = self.gpu_enabled.get()  # Use GPU setting from checkbox
@@ -252,7 +254,7 @@ class App(ctk.CTk):
         if self.process:
             self.process.terminate()
             self.process = None
-        self.start_button.configure(text="Start")
+        self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
         self.status_label.configure(text="Status: Idle")
         self.app_running = False
 
