@@ -45,7 +45,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Subtitler")
-        self.geometry("400x205")  # Increased width and height to accommodate dropdown
+        self.geometry("400x215")  # Increased width and height to accommodate dropdown
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
@@ -67,49 +67,28 @@ class App(ctk.CTk):
         self.model_selection.set(self.config.get('Settings', 'model'))  # Initialize model selection
 
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app, fg_color="green", hover_color="dark green")
-        self.start_button.pack(pady=(25, 35))  # Increased bottom padding
+        self.start_button.pack(pady=(25, 25))  # Increased bottom padding
 
-        # Checkbox frame for GPU and Intelligent mode
+        # Checkbox frame for Intelligent mode and GPU
         self.checkbox_frame = ctk.CTkFrame(self)
         self.checkbox_frame.pack(pady=(0, 10))
 
-        # Run on GPU Checkbox
-        self.gpu_checkbox = ctk.CTkCheckBox(
-            self.checkbox_frame,
-            text="Run on GPU",
-            variable=self.gpu_enabled,
-            command=self.save_config
-        )
-        self.gpu_checkbox.pack(side="left", padx=(0, 10))
-
-        # Tooltip for GPU Checkbox
-        self.gpu_tooltip_button = ctk.CTkButton(
-            self.checkbox_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.gpu_tooltip_button.pack(side="left", padx=(0, 10))
-        ToolTip(
-            self.gpu_tooltip_button, 
-            "Disabling this will run the app on CPU and result in much slower transcription."
-        )
+        # Inner frame to hold checkboxes and tooltips
+        self.inner_checkbox_frame = ctk.CTkFrame(self.checkbox_frame)
+        self.inner_checkbox_frame.pack()
 
         # Intelligent Mode Checkbox
         self.intelligent_checkbox = ctk.CTkCheckBox(
-            self.checkbox_frame, 
+            self.inner_checkbox_frame, 
             text="Intelligent mode", 
             variable=self.intelligent_mode,
             command=self.save_config
         )
-        self.intelligent_checkbox.pack(side="left", padx=(0, 10))
+        self.intelligent_checkbox.grid(row=0, column=0, sticky="w", padx=(0, 10))
 
         # Tooltip for Intelligent Mode
         self.intelligent_tooltip_button = ctk.CTkButton(
-            self.checkbox_frame,
+            self.inner_checkbox_frame,
             text="?",
             width=25,
             height=25,
@@ -117,17 +96,42 @@ class App(ctk.CTk):
             hover_color="grey",
             command=None
         )
-        self.intelligent_tooltip_button.pack(side="left")
+        self.intelligent_tooltip_button.grid(row=0, column=1)
         ToolTip(
             self.intelligent_tooltip_button, 
             "In intelligent mode, subtitle window is shown only when speech is detected."
+        )
+
+        # Run on GPU Checkbox
+        self.gpu_checkbox = ctk.CTkCheckBox(
+            self.inner_checkbox_frame,
+            text="Run on GPU",
+            variable=self.gpu_enabled,
+            command=self.save_config
+        )
+        self.gpu_checkbox.grid(row=1, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
+
+        # Tooltip for GPU Checkbox
+        self.gpu_tooltip_button = ctk.CTkButton(
+            self.inner_checkbox_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=None
+        )
+        self.gpu_tooltip_button.grid(row=1, column=1, pady=(5, 0))
+        ToolTip(
+            self.gpu_tooltip_button, 
+            "Disabling this will run the app on CPU and result in much slower transcription."
         )
 
         # Model Selection Dropdown
         self.model_frame = ctk.CTkFrame(self)
         self.model_frame.pack(pady=(0, 10))
 
-        self.model_label = ctk.CTkLabel(self.model_frame, text="Select Model:")
+        self.model_label = ctk.CTkLabel(self.model_frame, text="Model:")
         self.model_label.pack(side="left", padx=(0, 5))
 
         self.model_dropdown = ctk.CTkOptionMenu(
