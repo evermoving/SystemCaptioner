@@ -7,7 +7,7 @@ from gui import SubtitleGUI  # New import
 # Constants
 AUDIO_INPUT_DIR = "recordings"
 TRANSCRIPTION_OUTPUT = "transcriptions.txt"
-MODEL_SIZE = "medium"  # Changed to "small"
+MODEL_SIZE = "large"  # Changed to "small"
 
 # Queue for GUI updates
 transcription_queue = queue.Queue()
