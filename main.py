@@ -8,6 +8,7 @@ from gui import SubtitleGUI
 import queue
 import time
 import argparse
+import configparser
 
 # Add the specific path to cudnn_ops_infer64_8.dll to the PATH and sys.path
 cuda_dll_path = r"C:\dev\TranscriberX\nvidia_dependencies"
@@ -45,7 +46,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TranscriberX Application")
     parser.add_argument('--intelligent', action='store_true', help='Enable intelligent mode')
     parser.add_argument('--cuda', action='store_true', help='Enable CUDA for transcription')
+    parser.add_argument('--model', type=str, choices=['tiny', 'base', 'small', 'medium', 'large'], 
+                        help='Select the model size for transcription')
     args = parser.parse_args()
+
+    # Update config with the selected model
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    if args.model:
+        config['Settings']['model'] = args.model
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
 
     # Create a queue for GUI updates
     transcription_queue = transcriber.transcription_queue

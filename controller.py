@@ -45,11 +45,12 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Subtitler")
-        self.geometry("350x175")  # Increased width to accommodate tooltips
+        self.geometry("400x250")  # Increased width and height to accommodate dropdown
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
         self.gpu_enabled = ctk.BooleanVar()  # New BooleanVar for GPU checkbox
+        self.model_selection = ctk.StringVar()  # New StringVar for model selection
         self.app_running = False
         self.process = None
 
@@ -60,9 +61,10 @@ class App(ctk.CTk):
         self.config = configparser.ConfigParser()
         self.load_config()
 
-        # Initialize the Intelligent mode and CUDA based on config
+        # Initialize the Intelligent mode, CUDA, and model based on config
         self.intelligent_mode.set(self.config.getboolean('Settings', 'mode'))
         self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))  # Initialize GPU checkbox
+        self.model_selection.set(self.config.get('Settings', 'model'))  # Initialize model selection
 
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app)
         self.start_button.pack(pady=(20, 10))  # Reduced bottom padding
@@ -125,6 +127,37 @@ class App(ctk.CTk):
             "Disabling this will run the app on CPU and result in much slower transcription."
         )
 
+        # Model Selection Dropdown
+        self.model_frame = ctk.CTkFrame(self)
+        self.model_frame.pack(pady=(0, 10))
+
+        self.model_label = ctk.CTkLabel(self.model_frame, text="Select Model:")
+        self.model_label.pack(side="left", padx=(0, 5))
+
+        self.model_dropdown = ctk.CTkOptionMenu(
+            self.model_frame,
+            values=["tiny", "base", "small", "medium", "large"],
+            variable=self.model_selection,
+            command=self.save_config  # Save config on change
+        )
+        self.model_dropdown.pack(side="left")
+
+        # Tooltip for Model Dropdown
+        self.model_tooltip_button = ctk.CTkButton(
+            self.model_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=None
+        )
+        self.model_tooltip_button.pack(side="left")
+        ToolTip(
+            self.model_tooltip_button, 
+            "Select the model to use for transcription. Larger models are more accurate but require more VRAM."
+        )
+
         self.status_label = ctk.CTkLabel(self, text="Status: Idle")
         self.status_label.pack(side="bottom", pady=(0, 10))  # Changed to pack at the bottom with padding
 
@@ -138,15 +171,17 @@ class App(ctk.CTk):
         """Create a default config.ini file with basic settings."""
         self.config['Settings'] = {
             'mode': 'False',    # Default mode is basic (False)
-            'cuda': 'True'      # Default CUDA is enabled (True)
+            'cuda': 'True',     # Default CUDA is enabled (True)
+            'model': 'small'    # Default model is small
         }
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
 
-    def save_config(self):
+    def save_config(self, *args):
         """Save the current settings to config.ini."""
         self.config['Settings']['mode'] = str(self.intelligent_mode.get())
         self.config['Settings']['cuda'] = str(self.gpu_enabled.get())  # Save GPU setting
+        self.config['Settings']['model'] = self.model_selection.get()  # Save model selection
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
 
@@ -189,6 +224,7 @@ class App(ctk.CTk):
         self.status_label.configure(text="Status: Loading model...")
         intelligent = self.intelligent_mode.get()
         cuda = self.gpu_enabled.get()  # Use GPU setting from checkbox
+        model = self.model_selection.get()  # Get selected model
         python_executable = sys.executable
         main_path = os.path.join(base_dir, "main.py")
         args = [python_executable, "-u", main_path]  # Added "-u" for unbuffered output
@@ -196,6 +232,7 @@ class App(ctk.CTk):
             args.append("--intelligent")
         if cuda:
             args.append("--cuda")
+        args.extend([f"--model", model])  # Add model argument
 
         # Start the subprocess with stdout and stderr piped
         self.process = subprocess.Popen(
