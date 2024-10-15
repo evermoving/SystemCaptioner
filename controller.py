@@ -45,7 +45,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Subtitler")
-        self.geometry("350x200")  # Increased width to accommodate tooltips
+        self.geometry("350x175")  # Increased width to accommodate tooltips
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
@@ -70,14 +70,32 @@ class App(ctk.CTk):
         self.checkbox_frame = ctk.CTkFrame(self)
         self.checkbox_frame.pack(pady=(0, 10))  # Reduced top padding
 
-        # Intelligent Mode Checkbox
+        # Intelligent Mode Checkbox and Tooltip
+        self.intelligent_frame = ctk.CTkFrame(self.checkbox_frame)
+        self.intelligent_frame.pack(pady=(0, 5))
+
         self.intelligent_checkbox = ctk.CTkCheckBox(
-            self.checkbox_frame, 
+            self.intelligent_frame, 
             text="Intelligent mode", 
             variable=self.intelligent_mode,
             command=self.save_config  # Save config on change
         )
-        self.intelligent_checkbox.pack(pady=(0, 5))  # Added vertical padding
+        self.intelligent_checkbox.pack(side="left", padx=(0, 5))
+
+        self.intelligent_tooltip_button = ctk.CTkButton(
+            self.intelligent_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=None
+        )
+        self.intelligent_tooltip_button.pack(side="left")
+        ToolTip(
+            self.intelligent_tooltip_button, 
+            "In intelligent mode, subtitle window is shown only when speech is detected."
+        )
 
         # Run on GPU Checkbox (moved to a new line)
         self.gpu_frame = ctk.CTkFrame(self)
