@@ -1,5 +1,6 @@
 import time
 import os
+import configparser
 from faster_whisper import WhisperModel
 import queue  # New import
 from gui import SubtitleGUI  # New import
@@ -7,7 +8,11 @@ from gui import SubtitleGUI  # New import
 # Constants
 AUDIO_INPUT_DIR = "recordings"
 TRANSCRIPTION_OUTPUT = "transcriptions.txt"
-MODEL_SIZE = "large"  # Changed to "small"
+
+# Load configuration
+config = configparser.ConfigParser()
+config.read("config.ini")
+MODEL_SIZE = config.get('Settings', 'model')
 
 # Queue for GUI updates
 transcription_queue = queue.Queue()
