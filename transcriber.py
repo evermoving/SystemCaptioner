@@ -5,6 +5,7 @@ from faster_whisper import WhisperModel
 import queue  # New import
 from gui import SubtitleGUI  # New import
 import soundfile as sf
+import concurrent.futures
 
 # Constants
 AUDIO_INPUT_DIR = "recordings"
@@ -66,7 +67,7 @@ def save_transcription(transcription, output_path):
     # Send transcription to GUI queue
     transcription_queue.put(transcription)
 
-def monitor_audio_file(input_dir, output_path, check_interval=2, device="cuda"):
+def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"):
     """
     Continuously monitor the directory for new audio files and transcribe them.
     
@@ -78,19 +79,23 @@ def monitor_audio_file(input_dir, output_path, check_interval=2, device="cuda"):
     """
     processed_files = set()
     model = initialize_model(device)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)  # Allows parallel processing
     while True:
         for filename in os.listdir(input_dir):
             file_path = os.path.join(input_dir, filename)
             if file_path not in processed_files:
-                try:
-                    print(f"Transcribing {file_path}...", flush=True)
-                    transcription = transcribe_audio(model, file_path)
-                    if transcription:
-                        save_transcription(transcription, output_path)
-                    processed_files.add(file_path)
-                except Exception as e:
-                    print(f"Error during transcription of {file_path}: {e}", flush=True)
+                executor.submit(transcribe_and_save, model, file_path, output_path)
+                processed_files.add(file_path)
         time.sleep(check_interval)
+
+def transcribe_and_save(model, file_path, output_path):
+    try:
+        print(f"Transcribing {file_path}...", flush=True)
+        transcription = transcribe_audio(model, file_path)
+        if transcription:
+            save_transcription(transcription, output_path)
+    except Exception as e:
+        print(f"Error during transcription of {file_path}: {e}", flush=True)
 
 if __name__ == "__main__":
     monitor_audio_file(AUDIO_INPUT_DIR, TRANSCRIPTION_OUTPUT)
