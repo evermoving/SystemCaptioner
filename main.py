@@ -33,7 +33,7 @@ def start_transcription(device):
     transcriber.monitor_audio_file(
         transcriber.AUDIO_INPUT_DIR,
         transcriber.TRANSCRIPTION_OUTPUT,
-        check_interval=1,
+        check_interval=0.2,
         device=device
     )
 

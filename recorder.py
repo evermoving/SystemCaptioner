@@ -5,7 +5,7 @@ import threading
 import os
 
 # Constants
-CHUNK = 1024  # Number of frames per buffer
+CHUNK = 2048  # Number of frames per buffer
 FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNELS = 2  # Stereo
 RATE = 44100  # 44.1kHz sampling rate
