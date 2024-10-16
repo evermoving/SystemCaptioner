@@ -44,7 +44,7 @@ class ToolTip:
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("System Subtitler")
+        self.title("System Captioner")
         self.geometry("400x215")  # Increased width and height to accommodate dropdown
         self.resizable(False, False)
 
