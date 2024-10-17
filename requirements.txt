@@ -1,12 +1,6 @@
-sounddevice
-numpy
-soundcard
-comtypes
-pycaw
 pyaudiowpatch
-openai-whisper
-torch
 faster-whisper
 customtkinter
 soundfile
+pyaudio
 
