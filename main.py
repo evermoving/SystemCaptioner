@@ -7,6 +7,8 @@ import queue  # New import for queue
 import time   # New import for sleep
 import configparser  # New import for config handling
 
+from console import ConsoleWindow, QueueWriter  # Importing ConsoleWindow and QueueWriter from console.py
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
@@ -45,7 +47,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Captioner")
-        self.geometry("400x215")  # Increased width and height to accommodate dropdown
+        self.geometry("400x300")  # Increased height to accommodate console button
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
@@ -57,6 +59,16 @@ class App(ctk.CTk):
         # Queue to receive status updates from subprocess
         self.status_queue = queue.Queue()
 
+        # Queue for console messages
+        self.console_queue = queue.Queue()
+
+        # Redirect stdout and stderr to the console_queue
+        sys.stdout = QueueWriter(self.console_queue)
+        sys.stderr = QueueWriter(self.console_queue)
+
+        # Initialize ConsoleWindow (but don't show it yet)
+        self.console_window = None
+
         # Load configuration
         self.config = configparser.ConfigParser()
         self.load_config()
@@ -67,7 +79,11 @@ class App(ctk.CTk):
         self.model_selection.set(self.config.get('Settings', 'model'))  # Initialize model selection
 
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app, fg_color="green", hover_color="dark green")
-        self.start_button.pack(pady=(25, 25))  # Increased bottom padding
+        self.start_button.pack(pady=(25, 10))  # Adjusted padding
+
+        # Console Button
+        self.console_button = ctk.CTkButton(self, text="Console", command=self.open_console, fg_color="blue", hover_color="dark blue")
+        self.console_button.pack(pady=(0, 25))  # Adjusted padding
 
         # Checkbox frame for Intelligent mode and GPU
         self.checkbox_frame = ctk.CTkFrame(self)
@@ -207,10 +223,13 @@ class App(ctk.CTk):
                     if os.path.isfile(file_path):
                         os.remove(file_path)
                 print("Existing recordings have been deleted.", flush=True)
+                self.enqueue_console_message("Existing recordings have been deleted.")
             except Exception as e:
                 print(f"Error deleting recordings: {e}", flush=True)
+                self.enqueue_console_message(f"Error deleting recordings: {e}")
         else:
             print("Recordings directory does not exist. Creating one.", flush=True)
+            self.enqueue_console_message("Recordings directory does not exist. Creating one.")
             os.makedirs(recordings_path)
 
         # Empty transcriptions.txt
@@ -218,8 +237,10 @@ class App(ctk.CTk):
             with open(transcriptions_path, 'w') as f:
                 pass  # Truncate the file to empty it
             print("transcriptions.txt has been emptied.", flush=True)
+            self.enqueue_console_message("transcriptions.txt has been emptied.")
         except Exception as e:
             print(f"Error emptying transcriptions.txt: {e}", flush=True)
+            self.enqueue_console_message(f"Error emptying transcriptions.txt: {e}")
 
         # Proceed to start the subprocess
         self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
@@ -251,8 +272,8 @@ class App(ctk.CTk):
         # Start a thread to read the subprocess output
         threading.Thread(target=self.read_process_output, daemon=True).start()
 
-        # Start polling the queue for status updates
-        self.after(100, self.poll_status_queue)
+        # Start a thread to read main.py's own print statements (if any)
+        threading.Thread(target=self.watch_console_queue, daemon=True).start()
 
     def stop_app(self):
         if self.process:
@@ -265,12 +286,12 @@ class App(ctk.CTk):
     def read_process_output(self):
         """
         Reads the stdout and stderr of the subprocess and puts relevant
-        messages into the status_queue.
+        messages into the status_queue and console_queue.
         """
         if self.process.stdout:
             for line in self.process.stdout:
                 line = line.strip()
-                print(f"transcriber.py: {line}")  # Optional: Prefix for clarity
+                print(f"controller.py: {line}")  # This will go to console_queue
                 if "Loading model" in line:
                     self.status_queue.put("Status: Loading model...")
                 elif "Model loaded" in line:
@@ -281,7 +302,7 @@ class App(ctk.CTk):
         if self.process.stderr:
             for line in self.process.stderr:
                 line = line.strip()
-                print(f"transcriber.py ERROR: {line}")
+                print(f"controller.py ERROR: {line}")
                 self.status_queue.put(f"Error: {line}")
 
     def poll_status_queue(self):
@@ -297,6 +318,27 @@ class App(ctk.CTk):
         if self.app_running:
             self.after(100, self.poll_status_queue)
 
+    def enqueue_console_message(self, message):
+        """Helper method to enqueue messages to the console queue."""
+        self.console_queue.put(message)
+
+    def open_console(self):
+        """Open the console window."""
+        if not self.console_window or not self.console_window.winfo_exists():
+            self.console_window = ConsoleWindow(self.console_queue, self)
+        else:
+            self.console_window.focus()
+
+    def watch_console_queue(self):
+        """Continuously watch for console messages (if any additional handling is needed)."""
+        while self.app_running:
+            time.sleep(1)  # Adjust the sleep duration as needed
+
+    def run(self):
+        """Run the main application loop and start polling queues."""
+        self.after(100, self.poll_status_queue)
+        self.mainloop()
+
 if __name__ == "__main__":
     app = App()
-    app.mainloop()
+    app.run()
