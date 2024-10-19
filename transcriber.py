@@ -95,7 +95,7 @@ def transcribe_and_save(model, file_path, output_path):
         if transcription:
             save_transcription(transcription, output_path)
     except Exception as e:
-        print(f"Error during transcription of {file_path}: {e}", flush=True)
+        print(f"Can't transcribe audio chunk {file_path}: {e}", flush=True)
 
 if __name__ == "__main__":
     monitor_audio_file(AUDIO_INPUT_DIR, TRANSCRIPTION_OUTPUT)

@@ -47,7 +47,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Captioner")
-        self.geometry("400x300")  # Increased height to accommodate console button
+        self.geometry("400x250")  # Increased height to accommodate console button
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
