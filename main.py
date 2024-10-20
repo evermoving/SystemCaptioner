@@ -47,53 +47,41 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Captioner")
-        self.geometry("400x250")  # Increased height to accommodate console button
+        self.geometry("400x250")
         self.resizable(False, False)
 
         self.intelligent_mode = ctk.BooleanVar()
-        self.gpu_enabled = ctk.BooleanVar()  # New BooleanVar for GPU checkbox
-        self.model_selection = ctk.StringVar()  # New StringVar for model selection
+        self.gpu_enabled = ctk.BooleanVar()
+        self.model_selection = ctk.StringVar()
         self.app_running = False
         self.process = None
 
-        # Queue to receive status updates from subprocess
-        self.status_queue = queue.Queue()
-
-        # Queue for console messages
         self.console_queue = queue.Queue()
 
-        # Redirect stdout and stderr to the console_queue
         sys.stdout = QueueWriter(self.console_queue)
         sys.stderr = QueueWriter(self.console_queue)
 
-        # Initialize ConsoleWindow (but don't show it yet)
         self.console_window = None
 
-        # Load configuration
         self.config = configparser.ConfigParser()
         self.load_config()
 
-        # Initialize the Intelligent mode, CUDA, and model based on config
         self.intelligent_mode.set(self.config.getboolean('Settings', 'mode'))
-        self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))  # Initialize GPU checkbox
-        self.model_selection.set(self.config.get('Settings', 'model'))  # Initialize model selection
+        self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))
+        self.model_selection.set(self.config.get('Settings', 'model'))
 
         self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app, fg_color="green", hover_color="dark green")
-        self.start_button.pack(pady=(25, 10))  # Adjusted padding
+        self.start_button.pack(pady=(25, 10))
 
-        # Console Button
         self.console_button = ctk.CTkButton(self, text="Console", command=self.open_console, fg_color="blue", hover_color="dark blue")
-        self.console_button.pack(pady=(0, 25))  # Adjusted padding
+        self.console_button.pack(pady=(0, 25))
 
-        # Checkbox frame for Intelligent mode and GPU
         self.checkbox_frame = ctk.CTkFrame(self)
         self.checkbox_frame.pack(pady=(0, 10))
 
-        # Inner frame to hold checkboxes and tooltips
         self.inner_checkbox_frame = ctk.CTkFrame(self.checkbox_frame)
         self.inner_checkbox_frame.pack()
 
-        # Intelligent Mode Checkbox
         self.intelligent_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame, 
             text="Intelligent mode", 
@@ -102,7 +90,6 @@ class App(ctk.CTk):
         )
         self.intelligent_checkbox.grid(row=0, column=0, sticky="w", padx=(0, 10))
 
-        # Tooltip for Intelligent Mode
         self.intelligent_tooltip_button = ctk.CTkButton(
             self.inner_checkbox_frame,
             text="?",
@@ -118,7 +105,6 @@ class App(ctk.CTk):
             "In intelligent mode, subtitle window is shown only when speech is detected."
         )
 
-        # Run on GPU Checkbox
         self.gpu_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame,
             text="Run on GPU",
@@ -127,7 +113,6 @@ class App(ctk.CTk):
         )
         self.gpu_checkbox.grid(row=1, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
 
-        # Tooltip for GPU Checkbox
         self.gpu_tooltip_button = ctk.CTkButton(
             self.inner_checkbox_frame,
             text="?",
@@ -143,7 +128,6 @@ class App(ctk.CTk):
             "Disabling this will run the app on CPU and result in much slower transcription."
         )
 
-        # Model Selection Dropdown
         self.model_frame = ctk.CTkFrame(self)
         self.model_frame.pack(pady=(0, 10))
 
@@ -158,7 +142,6 @@ class App(ctk.CTk):
         )
         self.model_dropdown.pack(side="left")
 
-        # Tooltip for Model Dropdown
         self.model_tooltip_button = ctk.CTkButton(
             self.model_frame,
             text="?",
@@ -173,9 +156,6 @@ class App(ctk.CTk):
             self.model_tooltip_button, 
             "Select the model to use for transcription. Larger models are more accurate but require more VRAM."
         )
-
-        self.status_label = ctk.CTkLabel(self, text="Status: Idle")
-        self.status_label.pack(side="bottom", pady=(0, 10))  # Changed to pack at the bottom with padding
 
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
@@ -210,12 +190,10 @@ class App(ctk.CTk):
             self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
 
     def start_app(self):
-        # Path configurations
         base_dir = os.path.dirname(os.path.abspath(__file__))
         recordings_path = os.path.join(base_dir, "recordings")
         transcriptions_path = os.path.join(base_dir, "transcriptions.txt")
 
-        # Delete existing recordings
         if os.path.exists(recordings_path):
             try:
                 for filename in os.listdir(recordings_path):
@@ -232,7 +210,6 @@ class App(ctk.CTk):
             self.enqueue_console_message("Recordings directory does not exist. Creating one.")
             os.makedirs(recordings_path)
 
-        # Empty transcriptions.txt
         try:
             with open(transcriptions_path, 'w') as f:
                 pass  # Truncate the file to empty it
@@ -242,22 +219,19 @@ class App(ctk.CTk):
             print(f"Error emptying transcriptions.txt: {e}", flush=True)
             self.enqueue_console_message(f"Error emptying transcriptions.txt: {e}")
 
-        # Proceed to start the subprocess
         self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
-        self.status_label.configure(text="Status: Loading model...")
         intelligent = self.intelligent_mode.get()
         cuda = self.gpu_enabled.get()
         model = self.model_selection.get()
         python_executable = sys.executable
-        controller_path = os.path.join(base_dir, "controller.py")  # Change this line
-        args = [python_executable, "-u", controller_path]  # Change this line
+        controller_path = os.path.join(base_dir, "controller.py")
+        args = [python_executable, "-u", controller_path]
         if intelligent:
             args.append("--intelligent")
         if cuda:
             args.append("--cuda")
         args.extend([f"--model", model])
 
-        # Start the subprocess with stdout and stderr piped
         self.process = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
@@ -267,12 +241,8 @@ class App(ctk.CTk):
             universal_newlines=True
         )
         self.app_running = True
-        self.status_label.configure(text="Status: Loading model...")
 
-        # Start a thread to read the subprocess output
         threading.Thread(target=self.read_process_output, daemon=True).start()
-
-        # Start a thread to read main.py's own print statements (if any)
         threading.Thread(target=self.watch_console_queue, daemon=True).start()
 
     def stop_app(self):
@@ -280,43 +250,17 @@ class App(ctk.CTk):
             self.process.terminate()
             self.process = None
         self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
-        self.status_label.configure(text="Status: Idle")
         self.app_running = False
 
     def read_process_output(self):
-        """
-        Reads the stdout and stderr of the subprocess and puts relevant
-        messages into the status_queue and console_queue.
-        """
         if self.process.stdout:
             for line in self.process.stdout:
                 line = line.strip()
-                print(f"controller.py: {line}")  # This will go to console_queue
-                if "Loading model" in line:
-                    self.status_queue.put("Status: Loading model...")
-                elif "Model loaded" in line:
-                    if self.intelligent_mode.get():
-                        self.status_queue.put("Status: Listening for speech (Intelligent mode)")
-                    else:
-                        self.status_queue.put("Status: Listening for speech (Basic mode)")
+                print(f"controller.py: {line}")
         if self.process.stderr:
             for line in self.process.stderr:
                 line = line.strip()
                 print(f"controller.py ERROR: {line}")
-                self.status_queue.put(f"Error: {line}")
-
-    def poll_status_queue(self):
-        """
-        Polls the status_queue and updates the status_label accordingly.
-        """
-        while not self.status_queue.empty():
-            try:
-                status = self.status_queue.get_nowait()
-                self.status_label.configure(text=status)
-            except queue.Empty:
-                pass
-        if self.app_running:
-            self.after(100, self.poll_status_queue)
 
     def enqueue_console_message(self, message):
         """Helper method to enqueue messages to the console queue."""
@@ -335,8 +279,7 @@ class App(ctk.CTk):
             time.sleep(1)  # Adjust the sleep duration as needed
 
     def run(self):
-        """Run the main application loop and start polling queues."""
-        self.after(100, self.poll_status_queue)
+        """Run the main application loop."""
         self.mainloop()
 
 if __name__ == "__main__":
