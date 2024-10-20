@@ -10,7 +10,6 @@ import time
 import argparse
 import configparser
 
-# This file was previously named main.py
 # Update the import statement for the GUI
 from gui import SubtitleGUI  # No change needed
 
