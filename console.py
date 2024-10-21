@@ -2,13 +2,17 @@ import customtkinter as ctk
 from tkinter import scrolledtext
 import threading
 import queue
+import sys
 
 class ConsoleWindow(ctk.CTkToplevel):
-    def __init__(self, console_queue, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.title("Console")
-        self.geometry("800x400")
-        self.configure(bg="#2e2e2e")
+    def __init__(self, console_queue, master=None, icon_path=None):
+        super().__init__(master)
+        self.title("Console Output")
+        self.geometry("600x400")
+        
+        # Set the icon for the console window
+        if icon_path:
+            self.iconbitmap(icon_path)
 
         self.console_queue = console_queue
 

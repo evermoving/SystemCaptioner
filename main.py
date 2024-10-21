@@ -50,6 +50,10 @@ class App(ctk.CTk):
         self.geometry("400x250")
         self.resizable(False, False)
 
+        # Add icon to the main window
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
+        self.iconbitmap(icon_path)
+
         self.intelligent_mode = ctk.BooleanVar()
         self.gpu_enabled = ctk.BooleanVar()
         self.model_selection = ctk.StringVar()
@@ -269,7 +273,8 @@ class App(ctk.CTk):
     def open_console(self):
         """Open the console window."""
         if not self.console_window or not self.console_window.winfo_exists():
-            self.console_window = ConsoleWindow(self.console_queue, self)
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
+            self.console_window = ConsoleWindow(self.console_queue, self, icon_path)
         else:
             self.console_window.focus()
 
