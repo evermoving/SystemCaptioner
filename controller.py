@@ -13,8 +13,8 @@ import configparser
 # Update the import statement for the GUI
 from gui import SubtitleGUI  # No change needed
 
-# Add the specific path to cudnn_ops_infer64_8.dll to the PATH and sys.path
-cuda_dll_path = r"C:\dev\TranscriberX\nvidia_dependencies"
+# Change the hardcoded path to a relative path
+cuda_dll_path = os.path.join(os.path.dirname(__file__), "nvidia_dependencies")
 os.environ['PATH'] = f"{cuda_dll_path}{os.pathsep}{os.environ['PATH']}"
 sys.path.append(cuda_dll_path)
 
