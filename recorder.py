@@ -3,6 +3,11 @@ import wave
 import time
 import threading
 import os
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Constants
 CHUNK = 2048  # Number of frames per buffer
@@ -37,42 +42,89 @@ def cleanup_old_files():
         os.remove(os.path.join(OUTPUT_DIR, old_file))
         print(f"Deleted old file: {old_file}")
 
-def record_audio():
-    """Record audio from the default speaker and save it to a file."""
+def get_audio_devices():
+    """Get all available WASAPI loopback devices."""
+    devices = []
+    try:
+        p = pyaudio.PyAudio()
+        wasapi_info = p.get_host_api_info_by_type(pyaudio.paWASAPI)
+        
+        for i in range(p.get_device_count()):
+            device_info = p.get_device_info_by_index(i)
+            if device_info.get('hostApi') == wasapi_info['index']:
+                devices.append({
+                    'index': i,
+                    'name': device_info.get('name', 'Unknown Device'),
+                    'defaultSampleRate': device_info.get('defaultSampleRate', 44100),
+                    'maxInputChannels': device_info.get('maxInputChannels', 2)
+                })
+                logger.info(f"Found audio device: {device_info.get('name')} (Index: {i})")
+        
+        p.terminate()
+    except Exception as e:
+        logger.error(f"Error getting audio devices: {e}")
+    return devices
+
+def record_audio(device_index=None):
+    """Record audio from the specified or default speaker and save it to a file."""
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
+        logger.info(f"Created output directory: {OUTPUT_DIR}")
 
-    with pyaudio.PyAudio() as p:
-        # Get the default loopback device
-        loopback_device = get_default_loopback_device(p)
-        
-        # Open the stream
-        with p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK,
-                    input_device_index=loopback_device['index']) as stream:
+    try:
+        with pyaudio.PyAudio() as p:
+            # Get the specified or default loopback device
+            if device_index is not None:
+                device_info = p.get_device_info_by_index(device_index)
+                logger.info(f"Using selected device: {device_info.get('name')} (Index: {device_index})")
+            else:
+                device_info = get_default_loopback_device(p)
+                device_index = device_info['index']
+                logger.info(f"Using default loopback device: {device_info.get('name')} (Index: {device_index})")
+
+            # Log device properties
+            logger.info(f"Device properties: {device_info}")
             
-            while True:
-                print("Recording...")
-                frames = []
-
-                # Record for the specified duration
-                for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-                    data = stream.read(CHUNK)
-                    frames.append(data)
-
-                print(f"Finished recording. Captured {len(frames)} frames.")
-
-                # Generate a unique filename
-                filename = os.path.join(OUTPUT_DIR, f"recording_{int(time.time())}.wav")
-
-                # Start a new thread to save the audio
-                threading.Thread(target=save_audio, args=(frames, filename)).start()
+            try:
+                # Open the stream
+                stream = p.open(format=FORMAT,
+                            channels=CHANNELS,
+                            rate=RATE,
+                            input=True,
+                            frames_per_buffer=CHUNK,
+                            input_device_index=device_index)
                 
-                # Clean up old files after saving new recording
-                cleanup_old_files()
+                logger.info("Audio stream opened successfully")
+                
+                while True:
+                    logger.debug("Starting new recording segment...")
+                    frames = []
+
+                    # Record for the specified duration
+                    for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                        try:
+                            data = stream.read(CHUNK)
+                            frames.append(data)
+                        except Exception as e:
+                            logger.error(f"Error reading audio chunk: {e}")
+                            continue
+
+                    logger.debug(f"Finished recording segment. Captured {len(frames)} frames.")
+
+                    if frames:  # Only save if we have captured frames
+                        filename = os.path.join(OUTPUT_DIR, f"recording_{int(time.time())}.wav")
+                        threading.Thread(target=save_audio, args=(frames, filename)).start()
+                        cleanup_old_files()
+                    else:
+                        logger.warning("No frames captured in this segment")
+
+            except Exception as e:
+                logger.error(f"Error opening audio stream: {e}")
+                raise
+
+    except Exception as e:
+        logger.error(f"Critical error in record_audio: {e}")
+        raise
 
 if __name__ == "__main__":
     record_audio()
