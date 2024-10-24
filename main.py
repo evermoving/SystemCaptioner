@@ -60,12 +60,14 @@ class App(ctk.CTk):
         self.app_running = False
         self.process = None
 
+        # Redirect stdout and stderr to the console queue
         self.console_queue = queue.Queue()
-
         sys.stdout = QueueWriter(self.console_queue)
         sys.stderr = QueueWriter(self.console_queue)
 
-        self.console_window = None
+        # Initialize the console window
+        self.console_window = ConsoleWindow(self.console_queue, self)
+        self.console_window.withdraw()  # Start hidden
 
         self.config = configparser.ConfigParser()
         self.load_config()
@@ -302,11 +304,11 @@ class App(ctk.CTk):
         if self.process.stdout:
             for line in self.process.stdout:
                 line = line.strip()
-                print(f"controller.py: {line}")
+                self.enqueue_console_message(f"controller.py: {line}")
         if self.process.stderr:
             for line in self.process.stderr:
                 line = line.strip()
-                print(f"controller.py ERROR: {line}")
+                self.enqueue_console_message(f"controller.py ERROR: {line}")
 
     def enqueue_console_message(self, message):
         """Helper method to enqueue messages to the console queue."""
@@ -315,9 +317,9 @@ class App(ctk.CTk):
     def open_console(self):
         """Open the console window."""
         if not self.console_window or not self.console_window.winfo_exists():
-            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
-            self.console_window = ConsoleWindow(self.console_queue, self, icon_path)
+            self.console_window = ConsoleWindow(self.console_queue, self)
         else:
+            self.console_window.deiconify()
             self.console_window.focus()
 
     def watch_console_queue(self):
