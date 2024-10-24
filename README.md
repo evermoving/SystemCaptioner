@@ -4,10 +4,10 @@ Generates and shows real-time captions by listening to your Windows PC's audio.
 
 ## How it works
 
-1. Identifies your Windows default playback device/speaker
-2. Temporarily records what you hear through it in chunks using pyaudiowpatch
+1. Allows you to select a playback device from available loopback devices on your Windows system
+2. Temporarily records everything you hear through the selected device in chunks using pyaudiowpatch
 3. Locally transcribes the recordings using faster-whisper
-4. Displays the transcriptions as captions on a always-on-top window
+4. Displays the transcriptions as captions in an always-on-top window
 
 User-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
