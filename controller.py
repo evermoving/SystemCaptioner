@@ -29,7 +29,8 @@ except Exception as e:
 
 def start_recording():
     """Start the audio recording process."""
-    recorder.record_audio()
+    device_index = args.device_index if hasattr(args, 'device_index') else None
+    recorder.record_audio(device_index)
 
 def start_transcription(device):
     """Start the audio transcription process."""
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     parser.add_argument('--cuda', action='store_true', help='Enable CUDA for transcription')
     parser.add_argument('--model', type=str, choices=['tiny', 'base', 'small', 'medium', 'large'], 
                         help='Select the model size for transcription')
+    parser.add_argument('--device-index', type=int, help='Audio device index for recording')
     args = parser.parse_args()
 
     # Update config with the selected model

@@ -161,6 +161,32 @@ class App(ctk.CTk):
             "Select the model to use for transcription. Larger models are more accurate but require more VRAM."
         )
 
+        # Add audio device selection frame
+        self.device_frame = ctk.CTkFrame(self)
+        self.device_frame.pack(pady=(0, 10))
+
+        self.device_label = ctk.CTkLabel(self.device_frame, text="Audio Device:")
+        self.device_label.pack(side="left", padx=(0, 5))
+
+        self.devices = self.get_audio_devices()
+        self.device_names = [device['name'] for device in self.devices]
+        self.device_selection = ctk.StringVar()
+        
+        # Load saved device from config
+        saved_device = self.config.get('Settings', 'audio_device', fallback='')
+        if saved_device in self.device_names:
+            self.device_selection.set(saved_device)
+        elif self.device_names:
+            self.device_selection.set(self.device_names[0])
+
+        self.device_dropdown = ctk.CTkOptionMenu(
+            self.device_frame,
+            values=self.device_names,
+            variable=self.device_selection,
+            command=self.save_config
+        )
+        self.device_dropdown.pack(side="left")
+
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
         if not os.path.exists(CONFIG_FILE):
@@ -172,7 +198,8 @@ class App(ctk.CTk):
         self.config['Settings'] = {
             'mode': 'False',    # Default mode is basic (False)
             'cuda': 'True',     # Default CUDA is enabled (True)
-            'model': 'small'    # Default model is small
+            'model': 'small',    # Default model is small
+            'audio_device': ''  # Add default audio device setting
         }
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
@@ -182,6 +209,7 @@ class App(ctk.CTk):
         self.config['Settings']['mode'] = str(self.intelligent_mode.get())
         self.config['Settings']['cuda'] = str(self.gpu_enabled.get())  # Save GPU setting
         self.config['Settings']['model'] = self.model_selection.get()  # Save model selection
+        self.config['Settings']['audio_device'] = self.device_selection.get()  # Save audio device
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
 
@@ -229,12 +257,19 @@ class App(ctk.CTk):
         model = self.model_selection.get()
         python_executable = sys.executable
         controller_path = os.path.join(base_dir, "controller.py")
+
+        # Get the selected device index
+        selected_device = self.device_selection.get()
+        device_index = next((device['index'] for device in self.devices if device['name'] == selected_device), None)
+
         args = [python_executable, "-u", controller_path]
         if intelligent:
             args.append("--intelligent")
         if cuda:
             args.append("--cuda")
         args.extend([f"--model", model])
+        if device_index is not None:
+            args.extend(["--device-index", str(device_index)])
 
         self.process = subprocess.Popen(
             args,
@@ -286,6 +321,11 @@ class App(ctk.CTk):
     def run(self):
         """Run the main application loop."""
         self.mainloop()
+
+    def get_audio_devices(self):
+        """Get list of available audio devices."""
+        from recorder import get_audio_devices
+        return get_audio_devices()
 
 if __name__ == "__main__":
     app = App()
