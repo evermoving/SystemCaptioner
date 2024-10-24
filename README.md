@@ -11,7 +11,7 @@ Generates and shows real-time captions by listening to your Windows PC's audio.
 
 User-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
-By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can tell the app to run on CPU, but it might result in slower performance.
+By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can also choose to run it on CPU. 
 
 ## Get started (Windows)
 
@@ -39,4 +39,4 @@ python main.py
 ```
 7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini. 
 
-Initially, Whisper might take a while to load. Check console to monitor progress.
+In case of issues, check the in-built console for any error messages. 
