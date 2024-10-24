@@ -1,13 +1,12 @@
 # System Captioner
 
-Generates and shows real-time captions by listening to your Windows PC's audio. 
+Generates and shows real-time captions by listening to your Windows PC's audio. Makes digital content more accessible for those who are deaf or hard of hearing, aids language learning, and more. 
 
 ## How it works
 
-1. Allows you to select a playback device from available loopback devices on your Windows system
-2. Temporarily records everything you hear through the selected device in chunks using pyaudiowpatch
+1. Captures system audio in real-time through Windows audio loopback using PyAudioWPatch
 3. Locally transcribes the recordings using faster-whisper
-4. Displays the transcriptions as captions in an always-on-top window
+4. Displays the transcriptions as captions in a overlay window that remains always on top
 
 
 Language auto-detection, user-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
@@ -40,4 +39,4 @@ python main.py
 ```
 7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini. 
 
-In case of issues, check the in-built console for any error messages. 
+In case of issues, check the in-built console for any error messages.  
