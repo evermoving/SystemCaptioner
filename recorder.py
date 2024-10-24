@@ -4,16 +4,21 @@ import time
 import threading
 import os
 import logging
+import configparser
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Load configuration
+config = configparser.ConfigParser()
+config.read("config.ini")
+SAMPLE_RATE = int(config.get('Settings', 'sample_rate', fallback=44100))  # Default to 44100 if not set
+
 # Constants
 CHUNK = 2048  # Number of frames per buffer
 FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNELS = 2  # Stereo
-RATE = 44100  # 44.1kHz sampling rate
 RECORD_SECONDS = 3  # Record in 2-second intervals
 OUTPUT_DIR = "recordings"  # Directory to save recordings
 MAX_FILES = 10  # Maximum number of files to keep
@@ -30,7 +35,7 @@ def save_audio(frames, filename):
     with wave.open(filename, 'wb') as wf:
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(pyaudio.PyAudio().get_sample_size(FORMAT))
-        wf.setframerate(RATE)
+        wf.setframerate(SAMPLE_RATE)
         wf.writeframes(b''.join(frames))
 
 def cleanup_old_files():
@@ -86,30 +91,25 @@ def record_audio(device_index=None):
             logger.info(f"Device properties: {device_info}")
             
             try:
-                # Open the stream
+                # Open the stream with the detected sample rate
                 stream = p.open(format=FORMAT,
-                            channels=CHANNELS,
-                            rate=RATE,
-                            input=True,
-                            frames_per_buffer=CHUNK,
-                            input_device_index=device_index)
+                                channels=CHANNELS,
+                                rate=SAMPLE_RATE,
+                                input=True,
+                                frames_per_buffer=CHUNK,
+                                input_device_index=device_index)
                 
                 logger.info("Audio stream opened successfully")
                 
                 while True:
-                    logger.debug("Starting new recording segment...")
                     frames = []
-
-                    # Record for the specified duration
-                    for _ in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                    for _ in range(0, int(SAMPLE_RATE / CHUNK * RECORD_SECONDS)):
                         try:
                             data = stream.read(CHUNK)
                             frames.append(data)
                         except Exception as e:
                             logger.error(f"Error reading audio chunk: {e}")
                             continue
-
-                    logger.debug(f"Finished recording segment. Captured {len(frames)} frames.")
 
                     if frames:  # Only save if we have captured frames
                         filename = os.path.join(OUTPUT_DIR, f"recording_{int(time.time())}.wav")
