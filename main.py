@@ -207,9 +207,16 @@ class App(ctk.CTk):
     def save_config(self, *args):
         """Save the current settings to config.ini."""
         self.config['Settings']['mode'] = str(self.intelligent_mode.get())
-        self.config['Settings']['cuda'] = str(self.gpu_enabled.get())  # Save GPU setting
-        self.config['Settings']['model'] = self.model_selection.get()  # Save model selection
-        self.config['Settings']['audio_device'] = self.device_selection.get()  # Save audio device
+        self.config['Settings']['cuda'] = str(self.gpu_enabled.get())
+        self.config['Settings']['model'] = self.model_selection.get()
+        self.config['Settings']['audio_device'] = self.device_selection.get()
+
+        # Save the sample rate of the selected device
+        selected_device = self.device_selection.get()
+        device_info = next((device for device in self.devices if device['name'] == selected_device), None)
+        if device_info:
+            self.config['Settings']['sample_rate'] = str(device_info['defaultSampleRate'])
+
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
 
