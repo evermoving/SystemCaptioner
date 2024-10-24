@@ -2,6 +2,10 @@
 
 Generates and shows real-time captions by listening to your Windows PC's audio. Makes digital content more accessible for those who are deaf or hard of hearing, aids language learning, and more. 
 
+
+https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
+
+
 ## How it works
 
 1. Captures system audio in real-time through Windows audio loopback using PyAudioWPatch
