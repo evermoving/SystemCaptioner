@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 # Load configuration
 config = configparser.ConfigParser()
 config.read("config.ini")
-SAMPLE_RATE = int(config.get('Settings', 'sample_rate', fallback=44100))  # Default to 44100 if not set
+
+# Convert the sample rate to a float first, then to an integer
+SAMPLE_RATE = int(float(config.get('Settings', 'sample_rate', fallback='44100')))  # Default to 44100 if not set
 
 # Constants
 CHUNK = 2048  # Number of frames per buffer

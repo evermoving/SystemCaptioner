@@ -72,6 +72,7 @@ class App(ctk.CTk):
         self.config = configparser.ConfigParser()
         self.load_config()
 
+        # Initialize variables with config values
         self.intelligent_mode.set(self.config.getboolean('Settings', 'mode'))
         self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))
         self.model_selection.set(self.config.get('Settings', 'model'))
@@ -173,7 +174,7 @@ class App(ctk.CTk):
         self.devices = self.get_audio_devices()
         self.device_names = [device['name'] for device in self.devices]
         self.device_selection = ctk.StringVar()
-        
+
         # Load saved device from config
         saved_device = self.config.get('Settings', 'audio_device', fallback='')
         if saved_device in self.device_names:
@@ -185,7 +186,7 @@ class App(ctk.CTk):
             self.device_frame,
             values=self.device_names,
             variable=self.device_selection,
-            command=self.save_config
+            command=self.on_device_change  # Call this method when device changes
         )
         self.device_dropdown.pack(side="left")
 
@@ -201,7 +202,8 @@ class App(ctk.CTk):
             'mode': 'False',    # Default mode is basic (False)
             'cuda': 'True',     # Default CUDA is enabled (True)
             'model': 'small',    # Default model is small
-            'audio_device': ''  # Add default audio device setting
+            'audio_device': '',  # Add default audio device setting
+            'sample_rate': '44100'  # Default sample rate
         }
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
@@ -335,6 +337,17 @@ class App(ctk.CTk):
         """Get list of available audio devices."""
         from recorder import get_audio_devices
         return get_audio_devices()
+
+    def on_device_change(self, selected_device_name):
+        """Handle changes in the selected audio device."""
+        # Find the selected device info
+        device_info = next((device for device in self.devices if device['name'] == selected_device_name), None)
+        if device_info:
+            # Update the config with the new sample rate
+            self.config['Settings']['sample_rate'] = str(device_info['defaultSampleRate'])
+            self.config['Settings']['audio_device'] = selected_device_name
+            with open(CONFIG_FILE, 'w') as configfile:
+                self.config.write(configfile)
 
 if __name__ == "__main__":
     app = App()
