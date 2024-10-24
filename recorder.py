@@ -58,14 +58,15 @@ def get_audio_devices():
         
         for i in range(p.get_device_count()):
             device_info = p.get_device_info_by_index(i)
-            if device_info.get('hostApi') == wasapi_info['index']:
+            # Check if the device is a loopback device
+            if device_info.get('hostApi') == wasapi_info['index'] and device_info.get('isLoopbackDevice', False):
                 devices.append({
                     'index': i,
                     'name': device_info.get('name', 'Unknown Device'),
                     'defaultSampleRate': device_info.get('defaultSampleRate', 44100),
                     'maxInputChannels': device_info.get('maxInputChannels', 2)
                 })
-                logger.info(f"Found audio device: {device_info.get('name')} (Index: {i})")
+                logger.info(f"Found loopback audio device: {device_info.get('name')} (Index: {i})")
         
         p.terminate()
     except Exception as e:
