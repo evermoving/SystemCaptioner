@@ -9,7 +9,8 @@ Generates and shows real-time captions by listening to your Windows PC's audio.
 3. Locally transcribes the recordings using faster-whisper
 4. Displays the transcriptions as captions in an always-on-top window
 
-User-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
+
+Language auto-detection, user-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
 By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can also choose to run it on CPU. 
 
