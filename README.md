@@ -21,13 +21,11 @@ By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can a
 
 0. Install Python (currently compatible versions: Python 3.{7,8,9,10,11,12}.) 
 
-1. Clone the repository and navigate into the folder:
+1. Clone the repository (or download it as .zip from this page) and navigate into the folder:
 ```bash
 git clone https://github.com/evermoving/SystemCaptioner
 cd SystemCaptioner
 ```
-Alternatively download the repo as .zip from this page 
-
 2. Create a virtual environment inside the cloned repo: 
 ```bash
 python -m venv venv
