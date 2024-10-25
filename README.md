@@ -19,11 +19,15 @@ By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can a
 
 ## Get started (Windows)
 
+0. Install Python (currently compatible versions: Python 3.{7,8,9,10,11,12}.) 
+
 1. Clone the repository and navigate into the folder:
 ```bash
 git clone https://github.com/evermoving/SystemCaptioner
 cd SystemCaptioner
 ```
+Alternatively download the repo as .zip from this page 
+
 2. Create a virtual environment inside the cloned repo: 
 ```bash
 python -m venv venv
@@ -37,7 +41,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 5. Download nvidia_dependencies zip from the releases section and extract it into folder where main.py is, i.e. `/SystemCaptioner/nvidia_dependencies/`
-6. Launch main.py:
+6. Launch main.py while in virtual environment:
 ```bash
 python main.py
 ```
