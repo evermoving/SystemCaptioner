@@ -50,7 +50,7 @@ def build_portable():
     
     # Copy NVIDIA dependencies if they exist
     if os.path.exists(nvidia_deps_path):
-        target_nvidia_path = os.path.join(dist_path, 'SystemCaptioner', 'nvidia_dependencies')
+        target_nvidia_path = os.path.join(dist_path, 'SystemCaptioner', '_internal', 'nvidia_dependencies')
         shutil.copytree(nvidia_deps_path, target_nvidia_path)
         print("NVIDIA dependencies copied successfully")
     
