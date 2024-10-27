@@ -1,6 +1,7 @@
 import os
 import shutil
 import PyInstaller.__main__
+import faster_whisper
 
 def build_portable():
     # Get the current directory
@@ -10,6 +11,10 @@ def build_portable():
     dist_path = os.path.join(current_dir, 'dist')
     nvidia_deps_path = os.path.join(current_dir, 'nvidia_dependencies')
     icon_path = os.path.join(current_dir, 'icon.ico')
+    
+    # Get faster_whisper assets path
+    faster_whisper_path = os.path.dirname(faster_whisper.__file__)
+    assets_path = os.path.join(faster_whisper_path, 'assets')
     
     # Clean previous builds
     if os.path.exists(dist_path):
@@ -26,9 +31,10 @@ def build_portable():
         '--add-data=icon.ico;.',
         '--add-data=config.ini;.',
         '--add-data=controller.py;.',
-        '--add-data=transcriber.py;.',  # Add transcriber module
-        '--add-data=recorder.py;.',      # Add recorder module
-        '--add-data=console.py;.',       # Add console module
+        '--add-data=transcriber.py;.',
+        '--add-data=recorder.py;.',
+        '--add-data=console.py;.',
+        f'--add-data={assets_path};faster_whisper/assets',  # Add faster_whisper assets
         # Add all necessary hidden imports
         '--hidden-import=queue',
         '--hidden-import=configparser',
@@ -38,14 +44,16 @@ def build_portable():
         '--hidden-import=numpy',
         '--hidden-import=pyaudio',
         '--hidden-import=threading',
-        '--hidden-import=transcriber',    # Add transcriber module
-        '--hidden-import=recorder',       # Add recorder module
-        '--hidden-import=console',        # Add console module
-        '--hidden-import=sounddevice',    # Add sounddevice if you're using it
-        '--hidden-import=wave',           # Add wave if you're using it
-        '--hidden-import=scipy',          # Add scipy if you're using it
-        '--collect-all=whisper',          # Ensure all whisper components are included
-        '--collect-all=torch',            # Ensure all torch components are included
+        '--hidden-import=transcriber',
+        '--hidden-import=recorder',
+        '--hidden-import=console',
+        '--hidden-import=sounddevice',
+        '--hidden-import=wave',
+        '--hidden-import=scipy',
+        '--hidden-import=faster_whisper',  # Add faster_whisper
+        '--collect-all=whisper',
+        '--collect-all=torch',
+        '--collect-all=faster_whisper',  # Collect all faster_whisper components
     ])
     
     # Copy NVIDIA dependencies if they exist
