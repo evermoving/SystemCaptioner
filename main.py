@@ -234,6 +234,9 @@ class App(ctk.CTk):
 
     def start_app(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
+        if hasattr(sys, '_MEIPASS'):  # Check if running as executable
+            base_dir = sys._MEIPASS
+        
         recordings_path = os.path.join(base_dir, "recordings")
         transcriptions_path = os.path.join(base_dir, "transcriptions.txt")
 
@@ -266,39 +269,77 @@ class App(ctk.CTk):
         intelligent = self.intelligent_mode.get()
         cuda = self.gpu_enabled.get()
         model = self.model_selection.get()
-        python_executable = sys.executable
-        controller_path = os.path.join(base_dir, "controller.py")
-
+        
         # Get the selected device index
         selected_device = self.device_selection.get()
         device_index = next((device['index'] for device in self.devices if device['name'] == selected_device), None)
 
-        args = [python_executable, "-u", controller_path]
-        if intelligent:
-            args.append("--intelligent")
-        if cuda:
-            args.append("--cuda")
-        args.extend([f"--model", model])
-        if device_index is not None:
-            args.extend(["--device-index", str(device_index)])
+        if getattr(sys, 'frozen', False):
+            # If running as exe, use Python's runpy to execute controller.py as a module
+            import runpy
+            import threading
+            
+            def run_controller():
+                # Prepare sys.argv with the necessary arguments
+                sys.argv = [sys.executable]
+                if intelligent:
+                    sys.argv.append("--intelligent")
+                if cuda:
+                    sys.argv.append("--cuda")
+                sys.argv.extend(["--model", model])
+                if device_index is not None:
+                    sys.argv.extend(["--device-index", str(device_index)])
+                
+                # Run controller.py using runpy
+                controller_path = os.path.join(base_dir, "controller.py")
+                try:
+                    runpy.run_path(controller_path, run_name="__main__")
+                except Exception as e:
+                    self.enqueue_console_message(f"Controller error: {str(e)}")
 
-        self.process = subprocess.Popen(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
-        self.app_running = True
+            # Start controller in a separate thread
+            self.controller_thread = threading.Thread(target=run_controller, daemon=True)
+            self.controller_thread.start()
+            self.app_running = True
+            
+        else:
+            # Development mode - use subprocess as before
+            python_executable = sys.executable
+            controller_path = os.path.join(base_dir, "controller.py")
+            args = [python_executable, "-u", controller_path]
+            
+            if intelligent:
+                args.append("--intelligent")
+            if cuda:
+                args.append("--cuda")
+            args.extend(["--model", model])
+            if device_index is not None:
+                args.extend(["--device-index", str(device_index)])
 
-        threading.Thread(target=self.read_process_output, daemon=True).start()
+            self.process = subprocess.Popen(
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+            self.app_running = True
+            
+            threading.Thread(target=self.read_process_output, daemon=True).start()
+            
         threading.Thread(target=self.watch_console_queue, daemon=True).start()
 
     def stop_app(self):
-        if self.process:
-            self.process.terminate()
-            self.process = None
+        if getattr(sys, 'frozen', False):
+            # Signal to stop the controller thread
+            self.app_running = False
+            # You might need to implement a proper shutdown mechanism in controller.py
+        else:
+            if self.process:
+                self.process.terminate()
+                self.process = None
+        
         self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
         self.app_running = False
 
