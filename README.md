@@ -19,17 +19,17 @@ By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can a
 
 ## Get started (Windows)
 
-Prerequisites: One of the following Python versions installed on your system: 3.{7,8,9,10,11,12}. 
-
 Method 1 (fastest):
 
-1. Download SystemCaptioner_Portable.zip from the releases section, extract it, and run the exe. 
+1. Download SystemCaptioner_Standalone.zip from the releases section, extract it, and run the exe. 
 
 2. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini. 
 
 3. Press Start and start captioning.
 
 Method 2: 
+
+0. Prerequisites: One of the following Python versions installed on your system: 3.{7,8,9,10,11,12}. 
 
 1. Clone the repository (or download it as .zip from this page) and navigate into the folder:
 ```bash
