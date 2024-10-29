@@ -50,7 +50,7 @@ def get_base_path():
         return os.path.dirname(sys.executable)
     else:
         # Running in normal Python environment
-        return get_base_path()
+        return os.path.dirname(os.path.abspath(__file__))
 
 class App(ctk.CTk):
     def __init__(self):
@@ -275,22 +275,27 @@ class App(ctk.CTk):
         intelligent = self.intelligent_mode.get()
         cuda = self.gpu_enabled.get()
         model = self.model_selection.get()
-        python_executable = sys.executable
-        controller_path = os.path.join(base_dir, "controller.py")
-
-        # Get the selected device index
-        selected_device = self.device_selection.get()
-        device_index = next((device['index'] for device in self.devices if device['name'] == selected_device), None)
-
-        args = [python_executable, "-u", controller_path]
+        
+        # Determine the path to the Controller executable
+        if getattr(sys, 'frozen', False):
+            controller_executable = os.path.join(base_dir, 'Controller', 'Controller.exe')
+        else:
+            controller_executable = os.path.join(base_dir, 'controller.py')
+        
+        args = [controller_executable]
         if intelligent:
             args.append("--intelligent")
         if cuda:
             args.append("--cuda")
-        args.extend([f"--model", model])
+        args.extend(["--model", model])
+        
+        # Get the selected device index
+        selected_device = self.device_selection.get()
+        device_index = next((device['index'] for device in self.devices if device['name'] == selected_device), None)
         if device_index is not None:
             args.extend(["--device-index", str(device_index)])
-
+        
+        # If running in a frozen state, ensure subprocess handles executable correctly
         self.process = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,

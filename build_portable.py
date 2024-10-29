@@ -22,10 +22,7 @@ def build_portable():
         if os.path.exists(path):
             shutil.rmtree(path)
     
-    # Create necessary directories
-    os.makedirs(os.path.join(dist_path, 'SystemCaptioner', 'recordings'), exist_ok=True)
-    
-    # PyInstaller configuration
+    # PyInstaller configuration for main.py
     PyInstaller.__main__.run([
         'main.py',
         '--name=SystemCaptioner',
@@ -36,7 +33,6 @@ def build_portable():
         # Add all necessary data files
         '--add-data=icon.ico;.',
         '--add-data=config.ini;.',
-        '--add-data=controller.py;.',
         '--add-data=transcriber.py;.',
         '--add-data=recorder.py;.',
         '--add-data=console.py;.',
@@ -63,6 +59,38 @@ def build_portable():
         '--collect-all=torch',
         '--collect-all=faster_whisper',
         '--collect-all=customtkinter',
+    ])
+    
+    # PyInstaller configuration for controller.py
+    PyInstaller.__main__.run([
+        'controller.py',
+        '--name=Controller',
+        '--onedir',
+        f'--icon={icon_path}',
+        '--noconsole',
+        '--clean',
+        # Add necessary data files if any
+        '--add-data=config.ini;.',
+        f'--add-data={assets_path};faster_whisper/assets',
+        # Add hidden imports
+        '--hidden-import=queue',
+        '--hidden-import=configparser',
+        '--hidden-import=torch',
+        '--hidden-import=whisper',
+        '--hidden-import=numpy',
+        '--hidden-import=pyaudio',
+        '--hidden-import=threading',
+        '--hidden-import=transcriber',
+        '--hidden-import=recorder',
+        '--hidden-import=sounddevice',
+        '--hidden-import=wave',
+        '--hidden-import=scipy',
+        '--hidden-import=faster_whisper',
+        '--hidden-import=ctypes',
+        '--hidden-import=win32gui',
+        '--collect-all=whisper',
+        '--collect-all=torch',
+        '--collect-all=faster_whisper',
     ])
     
     # Copy NVIDIA dependencies if they exist
