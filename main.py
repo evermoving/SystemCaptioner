@@ -43,6 +43,15 @@ class ToolTip:
         if tw:
             tw.destroy()
 
+def get_base_path():
+    """Get the base path for the application in both dev and standalone environments"""
+    if getattr(sys, 'frozen', False):
+        # Running in a bundle (standalone)
+        return os.path.dirname(sys.executable)
+    else:
+        # Running in normal Python environment
+        return get_base_path()
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -51,7 +60,7 @@ class App(ctk.CTk):
         self.resizable(False, False)
 
         # Add icon to the main window
-        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
+        icon_path = os.path.join(get_base_path(), "icon.ico")
         self.iconbitmap(icon_path)
 
         self.intelligent_mode = ctk.BooleanVar()
@@ -233,7 +242,7 @@ class App(ctk.CTk):
             self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
 
     def start_app(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = get_base_path()
         recordings_path = os.path.join(base_dir, "recordings")
         transcriptions_path = os.path.join(base_dir, "transcriptions.txt")
 
