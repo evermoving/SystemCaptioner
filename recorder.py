@@ -23,7 +23,7 @@ FORMAT = pyaudio.paInt16  # 16-bit resolution
 CHANNELS = 2  # Stereo
 RECORD_SECONDS = 3  # Record in 2-second intervals
 OUTPUT_DIR = "recordings"  # Directory to save recordings
-MAX_FILES = 500  # Maximum number of files to keep
+MAX_FILES = 100  # Maximum number of files to keep
 
 def get_default_loopback_device(p):
     """Get the default loopback device."""

@@ -32,7 +32,6 @@ def build_portable():
         '--clean',
         # Add all necessary data files
         '--add-data=icon.ico;.',
-        '--add-data=config.ini;.',
         '--add-data=transcriber.py;.',
         '--add-data=recorder.py;.',
         '--add-data=console.py;.',
@@ -71,7 +70,6 @@ def build_portable():
         '--noconsole',
         '--clean',
         # Add necessary data files if any
-        '--add-data=config.ini;.',
         f'--add-data={assets_path};faster_whisper/assets',
         # Add hidden imports
         '--hidden-import=queue',
@@ -103,23 +101,43 @@ def build_portable():
         shutil.copytree(nvidia_deps_path, target_nvidia_path)
         print("NVIDIA dependencies copied successfully")
     
-    # Create an empty transcriptions.txt file
-    with open(os.path.join(dist_path, 'SystemCaptioner', 'transcriptions.txt'), 'w') as f:
-        pass
-    
-    # Create a default config.ini if it doesn't exist
-    config_path = os.path.join(dist_path, 'SystemCaptioner', 'config.ini')
-    if not os.path.exists(config_path):
-        with open(config_path, 'w') as f:
-            f.write("""[Settings]
-mode = False
-cuda = True
-model = small
-audio_device = 
-sample_rate = 44100
-""")
     
     print("Build completed successfully!")
+    
+    # Post-build steps
+    try:
+        dist_system_captioner = os.path.join(dist_path, 'SystemCaptioner')
+        dist_controller = os.path.join(dist_path, 'Controller')
+        controller_internal = os.path.join(dist_system_captioner, 'Controller', '_internal')
+        
+        # Move Controller folder inside SystemCaptioner
+        if os.path.exists(dist_controller):
+            target_controller = os.path.join(dist_system_captioner, 'Controller')
+            if os.path.exists(target_controller):
+                shutil.rmtree(target_controller)
+            shutil.move(dist_controller, target_controller)
+            print("Controller folder moved successfully")
+        
+        # Copy NVIDIA dependencies to Controller/_internal
+        nvidia_src = os.path.join(dist_system_captioner, 'nvidia_dependencies')
+        if os.path.exists(nvidia_src):
+            nvidia_dest = os.path.join(controller_internal, 'nvidia_dependencies')
+            if os.path.exists(nvidia_dest):
+                shutil.rmtree(nvidia_dest)
+            shutil.copytree(nvidia_src, nvidia_dest)
+            print("NVIDIA dependencies copied to Controller/_internal successfully")
+        
+        # Copy icon.ico from _internal to root
+        icon_src = os.path.join(dist_system_captioner, '_internal', 'icon.ico')
+        icon_dest = os.path.join(dist_system_captioner, 'icon.ico')
+        if os.path.exists(icon_src):
+            shutil.copy2(icon_src, icon_dest)
+            print("icon.ico copied to root successfully")
+        
+        print("Post-build steps completed successfully!")
+        
+    except Exception as e:
+        print(f"Error during post-build steps: {e}")
 
 if __name__ == "__main__":
     build_portable()

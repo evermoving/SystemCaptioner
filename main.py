@@ -203,6 +203,13 @@ class App(ctk.CTk):
         # Add this line after super().__init__()
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        # Add these as class attributes
+        self.TRANSCRIPTION_TIMEOUT = 5  # seconds
+        self.last_transcription_start = 0
+        self.current_transcription_file = None
+        self.timeout_thread = None
+        self.stop_timeout = threading.Event()
+
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
         if not os.path.exists(CONFIG_FILE):
@@ -235,6 +242,10 @@ class App(ctk.CTk):
             self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
 
     def start_app(self):
+        # Reset the timeout tracking variables
+        self.last_transcription_start = 0
+        self.current_transcription_file = None
+        
         base_dir = get_base_path()
         recordings_path = os.path.join(base_dir, "recordings")
         transcriptions_path = os.path.join(base_dir, "transcriptions.txt")
@@ -299,6 +310,10 @@ class App(ctk.CTk):
         )
         self.app_running = True
 
+        self.stop_timeout.clear()
+        self.timeout_thread = threading.Thread(target=self.monitor_timeout, daemon=True)
+        self.timeout_thread.start()
+
         threading.Thread(target=self.read_process_output, daemon=True).start()
         threading.Thread(target=self.watch_console_queue, daemon=True).start()
 
@@ -314,12 +329,41 @@ class App(ctk.CTk):
             self.process = None
         self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
         self.app_running = False
+        self.stop_timeout.set()
+        if self.timeout_thread:
+            self.timeout_thread.join()
+            self.timeout_thread = None
+
+    def monitor_timeout(self):
+        while self.app_running and not self.stop_timeout.is_set():
+            if self.last_transcription_start > 0:
+                elapsed_time = time.time() - self.last_transcription_start
+                if elapsed_time > self.TRANSCRIPTION_TIMEOUT:
+                    error_msg = f"Transcription timeout for {self.current_transcription_file} after {self.TRANSCRIPTION_TIMEOUT} seconds"
+                    self.enqueue_console_message(f"controller.py ERROR: {error_msg}")
+                    self.stop_app()
+                    time.sleep(1)  # Give it a moment to clean up
+                    self.start_app()  # Restart the application
+                    break
+            time.sleep(1)
 
     def read_process_output(self):
         if self.process.stdout:
             for line in self.process.stdout:
                 line = line.strip()
+                
+                # Check for transcription start
+                if "Starting transcription for" in line:
+                    self.last_transcription_start = time.time()
+                    self.current_transcription_file = line.split("...")[-2].split("recordings\\")[-1]
+                
+                # Check for transcription completion or error
+                if "Transcription completed" in line or "Error during transcription" in line:
+                    self.last_transcription_start = 0  # Reset the timer
+                    self.current_transcription_file = None
+                
                 self.enqueue_console_message(f"controller.py: {line}")
+                
         if self.process.stderr:
             for line in self.process.stderr:
                 line = line.strip()
