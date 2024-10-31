@@ -4,6 +4,7 @@ recordings
 nvidia_dependencies
 transcriptions.txt
 config.ini
+build_portable_example.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
