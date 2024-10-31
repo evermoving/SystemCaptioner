@@ -5,6 +5,7 @@ nvidia_dependencies
 transcriptions.txt
 config.ini
 build_portable_example.py
+build_portable_instructions.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

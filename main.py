@@ -330,7 +330,7 @@ class App(ctk.CTk):
         self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
         self.app_running = False
         self.stop_timeout.set()
-        if self.timeout_thread:
+        if self.timeout_thread and threading.current_thread() != self.timeout_thread:
             self.timeout_thread.join()
             self.timeout_thread = None
 

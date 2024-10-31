@@ -2,7 +2,7 @@ import customtkinter as ctk
 import configparser
 from recorder import get_audio_devices
 
-class SetupGUI(ctk.CTk):
+class SetupWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Initial Setup")
@@ -12,7 +12,7 @@ class SetupGUI(ctk.CTk):
         # Create label
         self.label = ctk.CTkLabel(
             self,
-            text="First launch detected. Select your audio device and then start SystemCaptioner.exe again:",
+            text="First launch detected. Select your audio device:",
             wraplength=350
         )
         self.label.pack(pady=(20, 10))
@@ -37,11 +37,23 @@ class SetupGUI(ctk.CTk):
         self.submit_button = ctk.CTkButton(
             self,
             text="Submit",
-            command=self.create_config
+            command=self.on_submit
         )
         self.submit_button.pack(pady=10)
 
-    def create_config(self):
+        # Add this line at the start of __init__
+        self.after_ids = []
+
+    def on_submit(self):
+        # Get all pending after callbacks
+        for after_id in self.tk.call('after', 'info'):
+            self.after_cancel(after_id)
+        
+        # Cancel any pending animations
+        for after_id in self.after_ids:  # You'll need to track these
+            self.after_cancel(after_id)
+        
+        # Save configuration
         """Create initial config.ini file with selected audio device."""
         config = configparser.ConfigParser()
         
@@ -60,11 +72,13 @@ class SetupGUI(ctk.CTk):
         with open('config.ini', 'w') as configfile:
             config.write(configfile)
         
+        # Properly destroy the window
+        self.quit()
         self.destroy()
 
 def run_setup():
-    app = SetupGUI()
-    app.mainloop()
+    setup_window = SetupWindow()
+    setup_window.mainloop()
 
 if __name__ == "__main__":
     run_setup()
