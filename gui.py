@@ -18,7 +18,7 @@ class SubtitleGUI:
         
         # Set window size and position
         window_width = 800
-        window_height = 150
+        window_height = 120
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x_position = (screen_width // 2) - (window_width // 2)
@@ -40,7 +40,7 @@ class SubtitleGUI:
             wrap=tk.WORD,
             bg='#2e2e2e',  # Match the window background
             fg='white',
-            font=("Helvetica", 20),
+            font=("Helvetica", 24),
             borderwidth=0,
             highlightthickness=0
         )
