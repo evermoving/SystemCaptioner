@@ -15,47 +15,18 @@ https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
 
 Language auto-detection, user-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
-By default, the app runs on and requires nVidia CUDA. As it is, the app should work with RTX 2000, 3000 and 4000 series cards.   
-
-Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
+By default, the app runs on and requires **nVidia CUDA** (dependencies included). As it is, the app should work with RTX 2000, 3000 and 4000 series cards. Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
 
 ## Installation (Windows)
 
-**Method 1 (fastest):**
-
 1. Download the latest standalone .zip (currently 1.37) from the releases section and extract all files. 
  
-2. Run SystemCaptioner.exe an follow the instructions.
+2. Run SystemCaptioner.exe and follow the instructions.
 
-**Method 2 (manual from cloned repo):**
+Alternatively build the standalone executable yourself using build_portable.py
 
-In 1.37 only operation from the standalone exe is supported (built using build_portable.py).  
+## Limitations/Troubleshooting 
 
-<strike>  0. Prerequisites: One of the following Python versions installed on your system: 3.{7,8,9,10,11,12}. 
+The captions box might occassionally restart; this is normal. 
 
-1. Clone the repository (or download it as .zip from this page) and navigate into the folder:
-```bash
-git clone https://github.com/evermoving/SystemCaptioner
-cd SystemCaptioner
-```
-2. Create a virtual environment inside the cloned repo: 
-```bash
-python -m venv venv
-```
-3. Activate the virtual environment:
-```bash
-.\venv\Scripts\activate
-```
-4. Install the dependencies:
-```bash
-pip install -r requirements.txt
-```
-5. Download nvidia_dependencies zip from the releases section and extract it into folder where main.py is, i.e. `/SystemCaptioner/nvidia_dependencies/`
-6. Launch main.py while in virtual environment:
-```bash
-python main.py
-```
-7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini.
-</strike>  
-
-In case of issues, check the in-built console for any error messages.  
+If you have any issues, send them to me via the 'Issues' section at the top of this page. Include the Console window log if possible. 
