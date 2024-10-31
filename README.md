@@ -25,7 +25,7 @@ By default, the app runs on and requires **nVidia CUDA** (dependencies included)
 
 Alternatively build the standalone executable yourself using build_portable.py
 
-## Troubleshooting 
+## Limitations/Troubleshooting 
 
 The captions box might occassionally restart; this is normal. 
 
