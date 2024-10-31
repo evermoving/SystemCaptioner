@@ -23,7 +23,7 @@ By default, the app runs on and requires **nVidia CUDA** (dependencies included)
  
 2. Run SystemCaptioner.exe and follow the instructions.
 
-Alternatively build the standalone executable yourself using build_portable.py
+Alternatively build the standalone executable yourself using build_portable.py. You will need the nvidia_dependencies folder from the standalone .zip. 
 
 ## Limitations/Troubleshooting 
 
