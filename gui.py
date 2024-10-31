@@ -18,7 +18,7 @@ class SubtitleGUI:
         
         # Set window size and position
         window_width = 800
-        window_height = 200
+        window_height = 150
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x_position = (screen_width // 2) - (window_width // 2)
