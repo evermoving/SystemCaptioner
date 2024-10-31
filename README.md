@@ -15,11 +15,23 @@ https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
 
 Language auto-detection, user-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
-By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can also choose to run it on CPU. 
+By default, the app runs on and requires nVidia CUDA. As it is, the app should work with RTX 2000, 3000 and 4000 series cards.   
 
-## Get started (Windows)
+Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
 
-0. Install Python (currently compatible versions: Python 3.{7,8,9,10,11,12}.) 
+## Installation (Windows)
+
+Method 1 (fastest):
+
+1. Download the latest standalone .zip (currently 1.37) from the releases section and extract all files. 
+ 
+2. Run SystemCaptioner.exe an follow the instructions.
+
+Method 2 (manual from cloned repo): 
+
+In 1.37 only operation from the standalone exe is supported (built using build_portable.py).  
+
+<strike>  0. Prerequisites: One of the following Python versions installed on your system: 3.{7,8,9,10,11,12}. 
 
 1. Clone the repository (or download it as .zip from this page) and navigate into the folder:
 ```bash
@@ -43,6 +55,7 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
-7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini. 
+7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini.
+</strike>  
 
 In case of issues, check the in-built console for any error messages.  
