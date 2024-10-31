@@ -17,8 +17,6 @@ Language auto-detection, user-friendly GUI, draggable captions box, and intellig
 
 By default, the app runs on and requires **nVidia CUDA** (dependencies included). As it is, the app should work with RTX 2000, 3000 and 4000 series cards. Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
 
-The captions box might occassionally restart; this is normal. 
-
 ## Installation (Windows)
 
 1. Download the latest standalone .zip (currently 1.37) from the releases section and extract all files. 
@@ -28,5 +26,7 @@ The captions box might occassionally restart; this is normal.
 Alternatively build the standalone executable yourself using build_portable.py
 
 ## Troubleshooting 
+
+The captions box might occassionally restart; this is normal. 
 
 If you have any issues, send them to me via the 'Issues' section at the top of this page. Include the Console window log if possible. 
