@@ -21,7 +21,7 @@ By default, the app runs on and requires **nVidia CUDA** (dependencies included)
 
 1. Download the latest standalone .zip (currently 1.37) from the releases section and extract all files. 
  
-2. Run SystemCaptioner.exe an follow the instructions.
+2. Run SystemCaptioner.exe and follow the instructions.
 
 Alternatively build the standalone executable yourself using build_portable.py
 
