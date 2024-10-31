@@ -21,13 +21,13 @@ Turning off GPU mode will make the app run on CPU; start with the smallest model
 
 ## Installation (Windows)
 
-<bold>Method 1 (fastest):</bold>
+**Method 1 (fastest):**
 
 1. Download the latest standalone .zip (currently 1.37) from the releases section and extract all files. 
  
 2. Run SystemCaptioner.exe an follow the instructions.
 
-<bold>Method 2 (manual from cloned repo):</bold> 
+**Method 2 (manual from cloned repo):**
 
 In 1.37 only operation from the standalone exe is supported (built using build_portable.py).  
 
