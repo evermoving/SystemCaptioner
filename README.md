@@ -25,7 +25,7 @@ Turning off GPU mode will make the app run on CPU; start with the smallest model
  
 2. Run SystemCaptioner.exe an follow the instructions.
 
-Alternatively build the standalone executable yourself using build_portably.py
+Alternatively build the standalone executable yourself using build_portable.py
 
 ## Troubleshooting 
 
