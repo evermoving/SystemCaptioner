@@ -17,9 +17,19 @@ Language auto-detection, user-friendly GUI, draggable captions box, and intellig
 
 By default, the app runs on and requires nVidia CUDA (cudnn + cublas). You can also choose to run it on CPU. 
 
-## Get started (Windows)
+## Installation (Windows)
 
-0. Install Python (currently compatible versions: Python 3.{7,8,9,10,11,12}.) 
+Method 1 (fastest):
+
+1. Download the latest standalone .zip (currently 1.36) from the releases section and extract all files. 
+
+2. Run SystemCaptioner.exe an follow the instructions.
+
+Method 2 (manual from cloned repo): 
+
+In 1.36 only operation from the standalone exe is supported (built using build_portable.py + some manual folder re-arrangement).  
+
+<strike>  0. Prerequisites: One of the following Python versions installed on your system: 3.{7,8,9,10,11,12}. 
 
 1. Clone the repository (or download it as .zip from this page) and navigate into the folder:
 ```bash
@@ -43,6 +53,7 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
-7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini. 
+7. Select your audio device from the dropdown menu. If it's already selected on first launch, select it again to ensure the sample rate is detected and written to config.ini.
+</strike>  
 
 In case of issues, check the in-built console for any error messages.  
