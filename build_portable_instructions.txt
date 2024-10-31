@@ -1,0 +1,1 @@
+controller needs to be moved inside SystemCaptioner folder and nvidia_depdencies copied into controller/internal and only there, icon.ico to SystemCaptioner
