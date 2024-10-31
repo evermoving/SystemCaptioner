@@ -8,6 +8,7 @@ import time   # New import for sleep
 import configparser  # New import for config handling
 
 from console import ConsoleWindow, QueueWriter  # Importing ConsoleWindow and QueueWriter from console.py
+from setupGUI import run_setup  # Add this import at the top
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -202,20 +203,9 @@ class App(ctk.CTk):
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
         if not os.path.exists(CONFIG_FILE):
-            self.create_default_config()
+            # Run setup GUI to get initial audio device selection
+            run_setup()
         self.config.read(CONFIG_FILE)
-
-    def create_default_config(self):
-        """Create a default config.ini file with basic settings."""
-        self.config['Settings'] = {
-            'mode': 'False',    # Default mode is basic (False)
-            'cuda': 'True',     # Default CUDA is enabled (True)
-            'model': 'small',    # Default model is small
-            'audio_device': '',  # Add default audio device setting
-            'sample_rate': '44100'  # Default sample rate
-        }
-        with open(CONFIG_FILE, 'w') as configfile:
-            self.config.write(configfile)
 
     def save_config(self, *args):
         """Save the current settings to config.ini."""

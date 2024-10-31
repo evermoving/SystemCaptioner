@@ -41,6 +41,7 @@ def build_portable():
         '--hidden-import=queue',
         '--hidden-import=configparser',
         '--hidden-import=customtkinter',
+        '--hidden-import=setupGUI',
         '--hidden-import=torch',
         '--hidden-import=whisper',
         '--hidden-import=numpy',
@@ -75,6 +76,7 @@ def build_portable():
         # Add hidden imports
         '--hidden-import=queue',
         '--hidden-import=configparser',
+        '--hidden-import=setupGUI',
         '--hidden-import=torch',
         '--hidden-import=whisper',
         '--hidden-import=numpy',
