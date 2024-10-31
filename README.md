@@ -15,9 +15,9 @@ https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
 
 Language auto-detection, user-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
-By default, the app runs on and requires nVidia CUDA. As it is, the app should work with RTX 2000, 3000 and 4000 series cards.   
+By default, the app runs on and requires **nVidia CUDA** (dependencies included). As it is, the app should work with RTX 2000, 3000 and 4000 series cards. Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
 
-Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
+The captions box might occassionally restart; this is normal. 
 
 ## Installation (Windows)
 
