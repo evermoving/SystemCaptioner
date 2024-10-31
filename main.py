@@ -200,6 +200,9 @@ class App(ctk.CTk):
         )
         self.device_dropdown.pack(side="left")
 
+        # Add this line after super().__init__()
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
         if not os.path.exists(CONFIG_FILE):
@@ -301,7 +304,13 @@ class App(ctk.CTk):
 
     def stop_app(self):
         if self.process:
-            self.process.terminate()
+            try:
+                self.process.terminate()
+                # Wait for a short time for graceful termination
+                self.process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                # Force kill if process doesn't terminate gracefully
+                self.process.kill()
             self.process = None
         self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
         self.app_running = False
@@ -352,6 +361,31 @@ class App(ctk.CTk):
             self.config['Settings']['audio_device'] = selected_device_name
             with open(CONFIG_FILE, 'w') as configfile:
                 self.config.write(configfile)
+
+    def on_closing(self):
+        """Handle cleanup when the window is closed."""
+        # Stop the application if it's running
+        if self.app_running:
+            self.stop_app()
+        
+        # Ensure the process is terminated
+        if self.process:
+            try:
+                self.process.terminate()
+                # Wait for a short time for graceful termination
+                self.process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                # Force kill if process doesn't terminate gracefully
+                self.process.kill()
+            self.process = None
+
+        # Destroy the console window if it exists
+        if self.console_window and self.console_window.winfo_exists():
+            self.console_window.destroy()
+
+        # Destroy the main window
+        self.quit()
+        self.destroy()
 
 if __name__ == "__main__":
     app = App()
