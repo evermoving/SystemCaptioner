@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
 
 Language auto-detection, user-friendly GUI, draggable captions box, and intelligent mode that shows captions only when speech is detected.
 
-By default, the app runs on and requires **nVidia CUDA** (dependencies included). As it is, the app should work with RTX 2000, 3000 and 4000 series cards. Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
+By default, the app runs on and requires **nVidia CUDA** (dependencies included). The app should work with RTX 2000, 3000 and 4000 series cards. Turning off GPU mode will make the app run on CPU; start with the smallest model and settle with the model that's stable. 
 
 ## Installation (Windows)
 
@@ -29,4 +29,4 @@ Alternatively build the standalone executable yourself using build_portable.py. 
 
 The captions box might occassionally restart; this is normal. 
 
-If you have any issues, send them to me via the 'Issues' section at the top of this page. Include the Console window log if possible. 
+If you experienced any issues with System Captioner, let me know in the 'Issues' page of this repo! Include the Console window log if possible. 
