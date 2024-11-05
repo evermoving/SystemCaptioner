@@ -19,7 +19,7 @@ By default, the app runs on and requires **nVidia CUDA** (dependencies included)
 
 ## Installation (Windows)
 
-1. Download the latest standalone .zip (currently 1.37) from the releases section and extract all files. 
+1. Download the latest standalone .zip (currently 1.38) from the releases section and extract all files. 
  
 2. Run SystemCaptioner.exe and follow the instructions.
 
