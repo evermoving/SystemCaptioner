@@ -58,7 +58,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Captioner")
-        self.geometry("400x250")
+        self.geometry("400x285")
         self.resizable(False, False)
 
         # Add icon to the main window
@@ -216,7 +216,8 @@ class App(ctk.CTk):
             self,
             text="If the app didn't work or you had any issues, let me know!",
             text_color="light blue",
-            cursor="hand2"
+            cursor="hand2",
+            font=("", -13, "underline")  # Added underline to the font
         )
         self.feedback_label.pack(side="bottom", pady=(0, 10))
         self.feedback_label.bind("<Button-1>", lambda e: self.open_feedback_link())
