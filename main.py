@@ -6,6 +6,7 @@ import threading
 import queue  # New import for queue
 import time   # New import for sleep
 import configparser  # New import for config handling
+import webbrowser  # Add this import at the top
 
 from console import ConsoleWindow, QueueWriter  # Importing ConsoleWindow and QueueWriter from console.py
 from setupGUI import run_setup  # Add this import at the top
@@ -209,6 +210,16 @@ class App(ctk.CTk):
         self.current_transcription_file = None
         self.timeout_thread = None
         self.stop_timeout = threading.Event()
+
+        # Add these after all other UI elements in __init__
+        self.feedback_label = ctk.CTkLabel(
+            self,
+            text="If the app didn't work or you had any issues, let me know!",
+            text_color="light blue",
+            cursor="hand2"
+        )
+        self.feedback_label.pack(side="bottom", pady=(0, 10))
+        self.feedback_label.bind("<Button-1>", lambda e: self.open_feedback_link())
 
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
@@ -432,6 +443,10 @@ class App(ctk.CTk):
         # Destroy the main window
         self.quit()
         self.destroy()
+
+    def open_feedback_link(self):
+        """Open the feedback link in default web browser"""
+        webbrowser.open("https://github.com/evermoving/SystemCaptioner/issues")
 
 if __name__ == "__main__":
     app = App()
