@@ -27,4 +27,6 @@ Alternatively build the standalone executable yourself using build_portable.py. 
 
 ## Limitations/Troubleshooting 
 
+‼️ Occasionally, the app can take a long time to start up/load a model. If there are no clear errors in console, wait for at least a few mins. 
+
 If you experienced any issues with System Captioner, let me know in the 'Issues' page of this repo! Include the Console window log if possible. 
