@@ -303,7 +303,7 @@ class App(ctk.CTk):
         self.process = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Merge stderr into stdout
             text=True,
             bufsize=1,
             universal_newlines=True
@@ -348,26 +348,28 @@ class App(ctk.CTk):
             time.sleep(1)
 
     def read_process_output(self):
+        """Read and process lines from the subprocess's combined stdout and stderr."""
         if self.process.stdout:
-            for line in self.process.stdout:
+            for line in iter(self.process.stdout.readline, ''):
+                if not line:
+                    break
                 line = line.strip()
-                
+
                 # Check for transcription start
                 if "Starting transcription for" in line:
                     self.last_transcription_start = time.time()
                     self.current_transcription_file = line.split("...")[-2].split("recordings\\")[-1]
-                
+
                 # Check for transcription completion or error
                 if "Transcription completed" in line or "Error during transcription" in line:
                     self.last_transcription_start = 0  # Reset the timer
                     self.current_transcription_file = None
-                
-                self.enqueue_console_message(f"controller.py: {line}")
-                
-        if self.process.stderr:
-            for line in self.process.stderr:
-                line = line.strip()
-                self.enqueue_console_message(f"controller.py ERROR: {line}")
+
+                # Determine if the line is an error message
+                if "ERROR" in line:
+                    self.enqueue_console_message(f"controller.py ERROR: {line}")
+                else:
+                    self.enqueue_console_message(f"controller.py: {line}")
 
     def enqueue_console_message(self, message):
         """Helper method to enqueue messages to the console queue."""
