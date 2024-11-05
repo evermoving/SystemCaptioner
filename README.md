@@ -23,10 +23,8 @@ By default, the app runs on and requires **nVidia CUDA** (dependencies included)
  
 2. Run SystemCaptioner.exe and follow the instructions.
 
-Alternatively build the standalone executable yourself using build_portable.py. You will need the nvidia_dependencies folder from the standalone .zip. 
+Alternatively build the standalone executable yourself using build_portable.py. You will need the nvidia_dependencies folder from the standalone .zip (/SystemCaptioner/Controller/_internal/nvidia_dependencies) and install all the dependencies using requirements.txt inside a venv first. 
 
 ## Limitations/Troubleshooting 
-
-The captions box might occassionally restart; this is normal. 
 
 If you experienced any issues with System Captioner, let me know in the 'Issues' page of this repo! Include the Console window log if possible. 
