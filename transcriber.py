@@ -99,12 +99,12 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
 
 def transcribe_and_save(model, file_path, output_path, translation_enabled, source_language):
     try:
-        print(f"Transcribing {file_path}...", flush=True)
+        print(f"Transcribing/translating {file_path}...", flush=True)
         transcription = transcribe_audio(model, file_path, translation_enabled, source_language)
         if transcription:
             save_transcription(transcription, output_path)
     except Exception as e:
-        print(f"Can't transcribe audio chunk {file_path}: {e}", flush=True)
+        print(f"Can't transcribe/translate audio chunk {file_path}: {e}", flush=True)
 
 if __name__ == "__main__":
     monitor_audio_file(AUDIO_INPUT_DIR, TRANSCRIPTION_OUTPUT)

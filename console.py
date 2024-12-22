@@ -8,7 +8,7 @@ class ConsoleWindow(ctk.CTkToplevel):
     def __init__(self, console_queue, master=None, icon_path=None):
         super().__init__(master)
         self.title("Console Output")
-        self.geometry("600x400")
+        self.geometry("900x450")
         
         # Set the icon for the console window
         if icon_path:
