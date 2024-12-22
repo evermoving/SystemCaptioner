@@ -50,14 +50,15 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
         return ""
 
     if translation_enabled:
-        print("Translating!", flush=True)
+        print("Translation mode on!", flush=True)
         segments, _ = model.transcribe(audio_path, language=source_language, task="translate", beam_size=1, vad_filter=True, word_timestamps=True)
 
     else:
+        print("Transcription mode on!", flush=True)
         segments, _ = model.transcribe(audio_path, language=source_language, task="transcribe", beam_size=1, vad_filter=True, word_timestamps=True)
     
     transcription = " ".join(segment.text for segment in segments)
-    print("Transcription completed.", flush=True)
+    print("Whisper processing completed.", flush=True)
     return transcription.strip()
 
 def save_transcription(transcription, output_path):

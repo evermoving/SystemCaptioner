@@ -57,7 +57,7 @@ def get_base_path():
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("System Captioner v1.1")
+        self.title("System Captioner v1.39 - Translation Update")
         self.geometry("650x785")
         self.resizable(True, True)
 
@@ -149,6 +149,29 @@ class App(ctk.CTk):
         ToolTip(
             self.gpu_tooltip_button, 
             "Disabling this will run the app on CPU and result in much slower transcription."
+        )
+
+        self.translation_checkbox = ctk.CTkCheckBox(
+            self.inner_checkbox_frame,
+            text="Enable Translation",
+            variable=self.translation_enabled,
+            command=self.save_config
+        )
+        self.translation_checkbox.grid(row=2, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
+
+        self.translation_tooltip_button = ctk.CTkButton(
+            self.inner_checkbox_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=None
+        )
+        self.translation_tooltip_button.grid(row=2, column=1, pady=(5, 0))
+        ToolTip(
+            self.translation_tooltip_button, 
+            "Enable this to translate the transcription to English."
         )
 
         self.model_frame = ctk.CTkFrame(self)
@@ -249,8 +272,20 @@ class App(ctk.CTk):
         self.workers_entry = ctk.CTkEntry(self.workers_frame, textvariable=self.workers)
         self.workers_entry.pack(side="left")
 
-        self.translation_checkbox = ctk.CTkCheckBox(self, text="Enable Translation", variable=self.translation_enabled, command=self.save_config)
-        self.translation_checkbox.pack(side="left")
+        self.workers_tooltip_button = ctk.CTkButton(
+            self.workers_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=None
+        )
+        self.workers_tooltip_button.pack(side="left")
+        ToolTip(
+            self.workers_tooltip_button, 
+            "Number of worker threads for parallel processing."
+        )
 
         self.language_frame = ctk.CTkFrame(self)
         self.language_frame.pack(pady=(0, 10))
@@ -267,6 +302,10 @@ class App(ctk.CTk):
             # Run setup GUI to get initial audio device selection
             run_setup()
         self.config.read(CONFIG_FILE)
+        self.translation_enabled.set(self.config.getboolean('Settings', 'translation_enabled', fallback=False))
+        self.source_language.set(self.config.get('Settings', 'source_language', fallback='en'))
+        self.transcription_timeout.set(self.config.get('Settings', 'transcription_timeout', fallback='5'))
+        self.workers.set(self.config.get('Settings', 'workers', fallback='4'))
 
     def save_config(self, *args):
         """Save the current settings to config.ini."""
