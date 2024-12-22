@@ -1,6 +1,5 @@
 import time
 import os
-import re
 import configparser
 from faster_whisper import WhisperModel
 import queue  # New import
@@ -108,6 +107,10 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
                 processed_files.add(file_path)
         time.sleep(check_interval)
 
+
+import re
+
+
 def filter_blacklisted_content(input_string):
     """
     Filters out blacklisted words or sentences from an input string based on a blacklist file.
@@ -116,28 +119,39 @@ def filter_blacklisted_content(input_string):
         input_string (str): The input string to be filtered.
 
     Returns:
-        str: The filtered string with blacklisted words/sentences removed.
+        str: The filtered string with blacklisted words/sentences removed and cleaned.
     """
     try:
         # Read the blacklist from the file
         with open('hallucinations.txt', 'r', encoding='utf-8') as file:
-            blacklisted_lines = [line.strip().lower() for line in file if line.strip()]
+            blacklisted_lines = sorted(
+                [line.strip().lower() for line in file if line.strip()],
+                key=len,
+                reverse=True  # Sort by length in descending order
+            )
 
         filtered_string = input_string
 
-        # Check for and remove blacklisted words/sentences
-        for blacklisted in blacklisted_lines:
-            pattern = re.compile(re.escape(blacklisted), re.IGNORECASE)
-            matches = pattern.findall(filtered_string)
-            for match in matches:
-                print(f"Blacklisted content detected: '{match}'", flush=True)
+        # Check for and remove blacklisted words/sentences recursively
+        while True:
+            initial_string = filtered_string
+            for blacklisted in blacklisted_lines:
+                pattern = re.compile(re.escape(blacklisted), re.IGNORECASE)
                 filtered_string = pattern.sub('', filtered_string)
+
+            # If no changes were made, exit the loop
+            if initial_string == filtered_string:
+                break
+
+        # Remove awkward spaces (e.g., extra spaces between words)
+        filtered_string = re.sub(r'\s+', ' ', filtered_string).strip()
 
         return filtered_string
 
     except Exception as e:
         print(f"Error encountered: {e}", flush=True)
         return ""
+
 
 def transcribe_and_save(model, file_path, output_path, translation_enabled, source_language):
     try:
