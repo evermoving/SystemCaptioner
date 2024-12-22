@@ -30,4 +30,6 @@ Alternatively build the standalone executable yourself using build_portable.py. 
 
 ‼️ Occasionally, the app can take a long time to start load a model. If there are no clear errors in console, wait for at least a few minutes or try stopping and starting model again. 
 
+⚠️ If you are getting `Library cublas64_12.dll is not found or cannot be loaded` error on console with no translation, copy `cublasLt64_11.dll` and rename to `cublasLt64_12.dll` in `\Controller\_internal\nvidia_dependencies` folder.
+
 If you experienced any issues with System Captioner, let us know in the 'Issues' page of this repo! Include the Console window log if possible. 
