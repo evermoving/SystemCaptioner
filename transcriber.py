@@ -1,9 +1,9 @@
 import time
 import os
+import re
 import configparser
 from faster_whisper import WhisperModel
 import queue  # New import
-from gui import SubtitleGUI  # New import
 import soundfile as sf
 import concurrent.futures
 
@@ -60,6 +60,7 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
             beam_size=1,
             vad_filter=True,
             word_timestamps=True,
+            # suppress_tokens=[-1, 50363, 50364]
         )
         
         transcription = " ".join(segment.text for segment in segments)
@@ -107,12 +108,43 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
                 processed_files.add(file_path)
         time.sleep(check_interval)
 
+def filter_blacklisted_content(input_string):
+    """
+    Filters out blacklisted words or sentences from an input string based on a blacklist file.
+
+    Args:
+        input_string (str): The input string to be filtered.
+
+    Returns:
+        str: The filtered string with blacklisted words/sentences removed.
+    """
+    try:
+        # Read the blacklist from the file
+        with open('hallucinations.txt', 'r', encoding='utf-8') as file:
+            blacklisted_lines = [line.strip().lower() for line in file if line.strip()]
+
+        filtered_string = input_string
+
+        # Check for and remove blacklisted words/sentences
+        for blacklisted in blacklisted_lines:
+            pattern = re.compile(re.escape(blacklisted), re.IGNORECASE)
+            matches = pattern.findall(filtered_string)
+            for match in matches:
+                print(f"Blacklisted content detected: '{match}'", flush=True)
+                filtered_string = pattern.sub('', filtered_string)
+
+        return filtered_string
+
+    except Exception as e:
+        print(f"Error encountered: {e}", flush=True)
+        return ""
+
 def transcribe_and_save(model, file_path, output_path, translation_enabled, source_language):
     try:
         print(f"Transcribing/translating {file_path}...", flush=True)
         transcription = transcribe_audio(model, file_path, translation_enabled, source_language)
         if transcription:
-            save_transcription(transcription, output_path)
+            save_transcription(filter_blacklisted_content(transcription), output_path)
     except Exception as e:
         print(f"Can't transcribe/translate audio chunk {file_path}: {e}", flush=True)
 

@@ -15,7 +15,7 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 
 # Convert the sample rate to a float first, then to an integer
-SAMPLE_RATE = int(float(config.get('Settings', 'sample_rate', fallback='44100')))  # Default to 44100 if not set
+SAMPLE_RATE = int(float(config.get('Settings', 'sample_rate', fallback='16000')))  # Default to 16000 if not set
 
 # Constants
 CHUNK = 2048  # Number of frames per buffer
