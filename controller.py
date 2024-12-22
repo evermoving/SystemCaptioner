@@ -51,7 +51,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TranscriberX Application")
     parser.add_argument('--intelligent', action='store_true', help='Enable intelligent mode')
     parser.add_argument('--cuda', action='store_true', help='Enable CUDA for transcription')
-    parser.add_argument('--model', type=str, choices=['tiny', 'base', 'small', 'medium', 'large'], 
+    parser.add_argument('--model', type=str, choices=['tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium',
+                'large-v1', 'large-v2', 'large-v3', 'large', 'distil-large-v2', 'distil-medium.en',
+                'distil-small.en', 'distil-large-v3', 'large-v3-turbo', 'turbo'],
                         help='Select the model size for transcription')
     parser.add_argument('--device-index', type=int, help='Audio device index for recording')
     parser.add_argument('--transcription-timeout', type=int, default=5, help='Transcription timeout in seconds')

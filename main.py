@@ -58,7 +58,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("System Captioner v1.39 - Translation Update")
-        self.geometry("650x785")
+        self.geometry("650x585")
         self.resizable(True, True)
 
         # Add icon to the main window
