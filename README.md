@@ -5,7 +5,7 @@ Generates and shows real-time captions/subtitles by listening to your Windows PC
 
 https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
 
-![ Main User Interface](demo1.png)
+![ Main User Interface](DemoMedia/demo1.png)
 
 ## How it works
 
@@ -24,7 +24,7 @@ By default, the app runs on and requires **NVIDIA CUDA** (dependencies included)
  
 2. Run SystemCaptioner.exe and follow the instructions.
 
-Alternatively build the standalone executable yourself using build_portable.py. You will need the nvidia_dependencies folder from the standalone .zip (/SystemCaptioner/Controller/_internal/nvidia_dependencies) and install all the dependencies using requirements.txt inside a venv first. 
+Alternatively build the standalone executable yourself using build_portable.py. You will need the nvidia_dependencies folder from the standalone .zip (/SystemCaptioner/Controller/_internal/nvidia_dependencies) and install all the dependencies using requirements.txt inside a venv first. After building, extra nvidia_dependencies folder is generated inside dist/SystemCaptioner/. Delete it. 
 
 ## Limitations/Troubleshooting 
 
