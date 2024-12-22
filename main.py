@@ -57,9 +57,9 @@ def get_base_path():
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("System Captioner")
-        self.geometry("400x285")
-        self.resizable(False, False)
+        self.title("System Captioner v1.1")
+        self.geometry("650x785")
+        self.resizable(True, True)
 
         # Add icon to the main window
         icon_path = os.path.join(get_base_path(), "icon.ico")
@@ -70,6 +70,11 @@ class App(ctk.CTk):
         self.model_selection = ctk.StringVar()
         self.app_running = False
         self.process = None
+
+        self.translation_enabled = ctk.BooleanVar()
+        self.source_language = ctk.StringVar(value="en")
+        self.transcription_timeout = ctk.StringVar(value="5")
+        self.workers = ctk.StringVar(value="4")
 
         # Redirect stdout and stderr to the console queue
         self.console_queue = queue.Queue()
@@ -154,7 +159,11 @@ class App(ctk.CTk):
 
         self.model_dropdown = ctk.CTkOptionMenu(
             self.model_frame,
-            values=["tiny", "base", "small", "medium", "large"],
+            values=[
+                'tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 
+                'large-v1', 'large-v2', 'large-v3', 'large', 'distil-large-v2', 'distil-medium.en', 
+                'distil-small.en', 'distil-large-v3', 'large-v3-turbo', 'turbo'
+            ],
             variable=self.model_selection,
             command=self.save_config  # Save config on change
         )
@@ -222,6 +231,36 @@ class App(ctk.CTk):
         self.feedback_label.pack(side="bottom", pady=(0, 10))
         self.feedback_label.bind("<Button-1>", lambda e: self.open_feedback_link())
 
+        self.timeout_frame = ctk.CTkFrame(self)
+        self.timeout_frame.pack(pady=(0, 10))
+
+        self.timeout_label = ctk.CTkLabel(self.timeout_frame, text="Transcription Timeout (seconds):")
+        self.timeout_label.pack(side="left", padx=(0, 5))
+
+        self.timeout_entry = ctk.CTkEntry(self.timeout_frame, textvariable=self.transcription_timeout)
+        self.timeout_entry.pack(side="left")
+
+        self.workers_frame = ctk.CTkFrame(self)
+        self.workers_frame.pack(pady=(0, 10))
+
+        self.workers_label = ctk.CTkLabel(self.workers_frame, text="Workers:")
+        self.workers_label.pack(side="left", padx=(0, 5))
+
+        self.workers_entry = ctk.CTkEntry(self.workers_frame, textvariable=self.workers)
+        self.workers_entry.pack(side="left")
+
+        self.translation_checkbox = ctk.CTkCheckBox(self, text="Enable Translation", variable=self.translation_enabled, command=self.save_config)
+        self.translation_checkbox.pack(side="left")
+
+        self.language_frame = ctk.CTkFrame(self)
+        self.language_frame.pack(pady=(0, 10))
+
+        self.language_label = ctk.CTkLabel(self.language_frame, text="Source Language:")
+        self.language_label.pack(side="left", padx=(0, 5))
+
+        self.language_entry = ctk.CTkEntry(self.language_frame, textvariable=self.source_language)
+        self.language_entry.pack(side="left")
+
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
         if not os.path.exists(CONFIG_FILE):
@@ -235,6 +274,10 @@ class App(ctk.CTk):
         self.config['Settings']['cuda'] = str(self.gpu_enabled.get())
         self.config['Settings']['model'] = self.model_selection.get()
         self.config['Settings']['audio_device'] = self.device_selection.get()
+        self.config['Settings']['transcription_timeout'] = self.transcription_timeout.get()
+        self.config['Settings']['workers'] = self.workers.get()
+        self.config['Settings']['translation_enabled'] = str(self.translation_enabled.get())
+        self.config['Settings']['source_language'] = self.source_language.get()
 
         # Save the sample rate of the selected device
         selected_device = self.device_selection.get()
@@ -328,6 +371,17 @@ class App(ctk.CTk):
 
         threading.Thread(target=self.read_process_output, daemon=True).start()
         threading.Thread(target=self.watch_console_queue, daemon=True).start()
+
+        self.TRANSCRIPTION_TIMEOUT = int(self.transcription_timeout.get())
+        workers = int(self.workers.get())
+        translation_enabled = self.translation_enabled.get()
+        source_language = self.source_language.get()
+
+        args.extend(["--transcription-timeout", str(self.TRANSCRIPTION_TIMEOUT)])
+        args.extend(["--workers", str(workers)])
+        if translation_enabled:
+            args.append("--translation-enabled")
+        args.extend(["--source-language", source_language])
 
     def stop_app(self):
         if self.process:

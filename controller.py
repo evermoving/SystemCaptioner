@@ -32,13 +32,14 @@ def start_recording():
     device_index = args.device_index if hasattr(args, 'device_index') else None
     recorder.record_audio(device_index)
 
-def start_transcription(device):
+def start_transcription(device, args):
     """Start the audio transcription process."""
     transcriber.monitor_audio_file(
         transcriber.AUDIO_INPUT_DIR,
         transcriber.TRANSCRIPTION_OUTPUT,
         check_interval=0.2,
-        device=device
+        device=device,
+        args=args
     )
 
 def start_gui(update_queue, intelligent_mode):
@@ -53,6 +54,10 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, choices=['tiny', 'base', 'small', 'medium', 'large'], 
                         help='Select the model size for transcription')
     parser.add_argument('--device-index', type=int, help='Audio device index for recording')
+    parser.add_argument('--transcription-timeout', type=int, default=5, help='Transcription timeout in seconds')
+    parser.add_argument('--workers', type=int, default=4, help='Number of worker threads')
+    parser.add_argument('--translation-enabled', action='store_true', help='Enable translation')
+    parser.add_argument('--source-language', type=str, default='en', help='Source language for transcription')
     args = parser.parse_args()
 
     # Update config with the selected model
@@ -71,7 +76,7 @@ if __name__ == "__main__":
 
     # Create threads for recording, transcription, and GUI
     recording_thread = threading.Thread(target=start_recording, daemon=True)
-    transcription_thread = threading.Thread(target=start_transcription, args=(device,), daemon=True)
+    transcription_thread = threading.Thread(target=start_transcription, args=(device, args), daemon=True)
     gui_thread = threading.Thread(target=start_gui, args=(transcription_queue, args.intelligent), daemon=True)
 
     # Start the threads
