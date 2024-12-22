@@ -1,8 +1,6 @@
 import customtkinter as ctk
 from tkinter import scrolledtext
-import threading
 import queue
-import sys
 
 class ConsoleWindow(ctk.CTkToplevel):
     def __init__(self, console_queue, master=None, icon_path=None):

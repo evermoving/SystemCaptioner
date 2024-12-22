@@ -4,8 +4,6 @@ import ctypes
 import threading
 import recorder
 import transcriber
-from gui import SubtitleGUI
-import queue
 import time
 import argparse
 import configparser
