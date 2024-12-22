@@ -1,6 +1,6 @@
 # System Captioner
 
-Generates and shows real-time captions/subtitles by listening to your Windows PC's audio. Makes digital content more accessible for those who are deaf or hard of hearing, aids language learning, and more. 
+This application generates and displays real-time captions/subtitles by capturing audio output from a Windows PC. It enhances accessibility for individuals who are deaf or hard of hearing, facilitates language learning, and offers other potential applications. For example, with translation turned on, it enables near real-time communication during foreign language voice calls and provides on-the-fly subtitling for foreign language media, such as anime, without the need for pre-processing video files, and is not limited to any one software boundary.
 
 
 https://github.com/user-attachments/assets/7315ab7c-fe30-4c37-91aa-60bb32979338
@@ -24,7 +24,7 @@ By default, the app runs on and requires **NVIDIA CUDA** (dependencies included)
  
 2. Run SystemCaptioner.exe and follow the instructions.
 
-Alternatively build the standalone executable yourself using build_portable.py. You will need the nvidia_dependencies folder from the standalone .zip (/SystemCaptioner/Controller/_internal/nvidia_dependencies) and install all the dependencies using requirements.txt inside a venv first. After building, extra nvidia_dependencies folder is generated inside dist/SystemCaptioner/. Delete it. 
+Alternatively build the standalone executable yourself using `build_portable.py`. You will need the nvidia_dependencies folder from the standalone .zip (/SystemCaptioner/Controller/_internal/nvidia_dependencies) and install all the dependencies using requirements.txt inside a venv first. After building, extra nvidia_dependencies folder is generated inside dist/SystemCaptioner/. Delete it. 
 
 ## Limitations/Troubleshooting 
 
