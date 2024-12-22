@@ -31,7 +31,7 @@ def initialize_model(device):
     """
     print(f"Loading model: {MODEL_SIZE} on {device}", flush=True)
     model = WhisperModel(MODEL_SIZE, device=device)
-    print("Model loaded.", flush=True)
+    print(f"Model {MODEL_SIZE} loaded.", flush=True)
     return model
 
 def transcribe_audio(model, audio_path, translation_enabled, source_language):
@@ -49,17 +49,25 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
         print(f"Error reading audio file {audio_path}: {e}")
         return ""
 
-    if translation_enabled:
-        print("Translation mode on!", flush=True)
-        segments, _ = model.transcribe(audio_path, language=source_language, task="translate", beam_size=1, vad_filter=True, word_timestamps=True)
+    try:
+        # print(f"Translation mode: {'enabled' if translation_enabled else 'disabled'}", flush=True)
+        # print(f"Source language: {source_language}", flush=True)
 
-    else:
-        print("Transcription mode on!", flush=True)
-        segments, _ = model.transcribe(audio_path, language=source_language, task="transcribe", beam_size=1, vad_filter=True, word_timestamps=True)
-    
-    transcription = " ".join(segment.text for segment in segments)
-    print("Whisper processing completed.", flush=True)
-    return transcription.strip()
+        segments, _ = model.transcribe(
+            audio_path,
+            language=source_language,
+            task="translate" if translation_enabled else "transcribe",
+            beam_size=1,
+            vad_filter=True,
+            word_timestamps=True,
+        )
+        
+        transcription = " ".join(segment.text for segment in segments)
+        print("Whisper processing completed.", flush=True)
+        return transcription.strip()
+    except Exception as e:
+        print(f"Error during processing: {e}", flush=True)
+        return ""
 
 def save_transcription(transcription, output_path):
     """
@@ -71,7 +79,7 @@ def save_transcription(transcription, output_path):
     """
     with open(output_path, "a", encoding='utf-8') as f:
         f.write(transcription + "\n")
-    print(f"Transcription saved to {output_path}", flush=True)
+    print(f"Output saved to {output_path}", flush=True)
     # Send transcription to GUI queue
     transcription_queue.put(transcription)
 
@@ -88,11 +96,13 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
     """
     processed_files = set()
     model = initialize_model(device)
+    print(f"Using {args.workers} workers thread...", flush=True)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.workers)  # Allows parallel processing
     while True:
         for filename in os.listdir(input_dir):
             file_path = os.path.join(input_dir, filename)
             if file_path not in processed_files:
+                print(f"Running transcribe_and_save with translation_enabled: {args.translation_enabled} and source_language: {args.source_language}...", flush=True)
                 executor.submit(transcribe_and_save, model, file_path, output_path, args.translation_enabled, args.source_language)
                 processed_files.add(file_path)
         time.sleep(check_interval)

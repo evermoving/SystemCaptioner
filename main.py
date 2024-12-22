@@ -204,7 +204,7 @@ class App(ctk.CTk):
         self.model_tooltip_button.pack(side="left")
         ToolTip(
             self.model_tooltip_button, 
-            "Select the model to use for transcription. Larger models are more accurate but require more VRAM."
+            "Select the model to use for transcription. Larger models are more accurate but require more VRAM. .en are English only models"
         )
 
         # Add audio device selection frame
@@ -246,7 +246,7 @@ class App(ctk.CTk):
         # Add these after all other UI elements in __init__
         self.feedback_label = ctk.CTkLabel(
             self,
-            text="If the app didn't work or you had any issues, let me know!",
+            text="If the app didn't work or you had any issues, let us know!",
             text_color="light blue",
             cursor="hand2",
             font=("", -13, "underline")  # Added underline to the font
@@ -392,7 +392,14 @@ class App(ctk.CTk):
         device_index = next((device['index'] for device in self.devices if device['name'] == selected_device), None)
         if device_index is not None:
             args.extend(["--device-index", str(device_index)])
-        
+
+        # Add translation settings before process creation
+        if self.translation_enabled.get():
+            args.append("--translation-enabled")
+        args.extend(["--source-language", self.source_language.get()])
+        args.extend(["--transcription-timeout", self.transcription_timeout.get()])
+        args.extend(["--workers", self.workers.get()])
+
         # If running in a frozen state, ensure subprocess handles executable correctly
         self.process = subprocess.Popen(
             args,
@@ -453,7 +460,7 @@ class App(ctk.CTk):
             time.sleep(1)
 
     def read_process_output(self):
-        """Read and process lines from the subprocess's combined stdout and stderr."""
+        """Read and process lines from the subprocesses combined stdout and stderr."""
         if self.process.stdout:
             for line in iter(self.process.stdout.readline, ''):
                 if not line:
