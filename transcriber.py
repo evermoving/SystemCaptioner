@@ -1,5 +1,6 @@
 import time
 import os
+import re
 import configparser
 from faster_whisper import WhisperModel
 import queue  # New import
@@ -42,10 +43,10 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
     try:
         with sf.SoundFile(audio_path) as sound_file:
             if sound_file.frames == 0:
-                print(f"Warning: Empty audio file: {audio_path}")
+                print(f"Warning: Empty audio file: {audio_path}", flush=True)
                 return ""
     except Exception as e:
-        print(f"Error reading audio file {audio_path}: {e}")
+        print(f"Error reading audio file {audio_path}: {e}", flush=True)
         return ""
 
     try:
@@ -59,6 +60,7 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
             beam_size=1,
             vad_filter=True,
             word_timestamps=True,
+            # initial_prompt=""
             # suppress_tokens=[-1, 50363, 50364]
         )
         
@@ -92,23 +94,22 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
         output_path (str): Path to save the transcriptions.
         check_interval (int): Time in seconds between checks.
         device (str): Device to use for transcription ('cuda' or 'cpu').
-        args (argparse.Namespace): Parsed command-line arguments.
+        args (argparse.Namespace): Parsed command-line arguments for translation toggle and source language.
     """
     processed_files = set()
     model = initialize_model(device)
     print(f"Using {args.workers} workers thread...", flush=True)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.workers)  # Allows parallel processing
+
+    print(f"Starting transcribe_and_save with translation_enabled: {args.translation_enabled} and source_language: {args.source_language}...", flush=True)
+
     while True:
         for filename in os.listdir(input_dir):
             file_path = os.path.join(input_dir, filename)
             if file_path not in processed_files:
-                print(f"Running transcribe_and_save with translation_enabled: {args.translation_enabled} and source_language: {args.source_language}...", flush=True)
                 executor.submit(transcribe_and_save, model, file_path, output_path, args.translation_enabled, args.source_language)
                 processed_files.add(file_path)
         time.sleep(check_interval)
-
-
-import re
 
 
 def filter_blacklisted_content(input_string):
