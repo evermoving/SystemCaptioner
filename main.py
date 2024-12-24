@@ -107,7 +107,7 @@ class App(ctk.CTk):
 
         self.intelligent_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame, 
-            text="Intelligent mode", 
+            text="Intelligent Mode",
             variable=self.intelligent_mode,
             command=self.save_config
         )

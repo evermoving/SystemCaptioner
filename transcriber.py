@@ -112,7 +112,7 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
         time.sleep(check_interval)
 
 
-def filter_blacklisted_content(input_string):
+def filter_hallucination_content(input_string):
     """
     Filters out blacklisted words or sentences from an input string based on a blacklist file.
 
@@ -146,12 +146,13 @@ def filter_blacklisted_content(input_string):
 
         # Remove awkward spaces (e.g., extra spaces between words)
         filtered_string = re.sub(r'\s+', ' ', filtered_string).strip()
+        print(f"String \'{input_string}\' filtered as hallucination text detected", flush=True)
 
         return filtered_string
 
     except Exception as e:
-        print(f"Error encountered: {e}", flush=True)
-        return ""
+        print(f"Returning unfiltered string. Error encountered: {e}", flush=True)
+        return input_string
 
 
 def transcribe_and_save(model, file_path, output_path, translation_enabled, source_language):
@@ -159,7 +160,7 @@ def transcribe_and_save(model, file_path, output_path, translation_enabled, sour
         print(f"Transcribing/translating {file_path}...", flush=True)
         transcription = transcribe_audio(model, file_path, translation_enabled, source_language)
         if transcription:
-            save_transcription(filter_blacklisted_content(transcription), output_path)
+            save_transcription(filter_hallucination_content(transcription), output_path)
     except Exception as e:
         print(f"Can't transcribe/translate audio chunk {file_path}: {e}", flush=True)
 
