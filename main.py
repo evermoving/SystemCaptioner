@@ -76,6 +76,9 @@ class App(ctk.CTk):
         self.transcription_timeout = ctk.StringVar(value="5")
         self.workers = ctk.StringVar(value="4")
 
+        self.filter_hallucinations = ctk.BooleanVar()
+        self.store_output = ctk.BooleanVar()
+
         # Redirect stdout and stderr to the console queue
         self.console_queue = queue.Queue()
         sys.stdout = QueueWriter(self.console_queue)
@@ -172,6 +175,52 @@ class App(ctk.CTk):
         ToolTip(
             self.translation_tooltip_button, 
             "Enable this to translate the transcription to English."
+        )
+
+        self.filter_hallucinations_checkbox = ctk.CTkCheckBox(
+            self.inner_checkbox_frame,
+            text="Filter Hallucinations",
+            variable=self.filter_hallucinations,
+            command=self.save_config
+        )
+        self.filter_hallucinations_checkbox.grid(row=3, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
+
+        self.filter_hallucinations_tooltip_button = ctk.CTkButton(
+            self.inner_checkbox_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=lambda: self.open_file("hallucinations.txt")
+        )
+        self.filter_hallucinations_tooltip_button.grid(row=3, column=1, pady=(5, 0))
+        ToolTip(
+            self.filter_hallucinations_tooltip_button,
+            "Enable this to filter hallucinations using hallucinations.txt file."
+        )
+
+        self.store_output_checkbox = ctk.CTkCheckBox(
+            self.inner_checkbox_frame,
+            text="Store Output",
+            variable=self.store_output,
+            command=self.save_config
+        )
+        self.store_output_checkbox.grid(row=4, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
+
+        self.store_output_tooltip_button = ctk.CTkButton(
+            self.inner_checkbox_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=None
+        )
+        self.store_output_tooltip_button.grid(row=4, column=1, pady=(5, 0))
+        ToolTip(
+            self.store_output_tooltip_button,
+            "Enable this to store the transcription output in transcriptions.txt."
         )
 
         self.model_frame = ctk.CTkFrame(self)
@@ -296,6 +345,21 @@ class App(ctk.CTk):
         self.language_entry = ctk.CTkEntry(self.language_frame, textvariable=self.source_language)
         self.language_entry.pack(side="left")
 
+        self.language_tooltip_button = ctk.CTkButton(
+            self.language_frame,
+            text="?",
+            width=25,
+            height=25,
+            fg_color="transparent",
+            hover_color="grey",
+            command=lambda: self.open_url("https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes")
+        )
+        self.language_tooltip_button.pack(side="left")
+        ToolTip(
+            self.language_tooltip_button,
+            "Specify the language used by the source audio using ISO-639-1 format (e.g., 'en' for English, 'zh' for Chinese)."
+        )
+
     def load_config(self):
         """Load the configuration from config.ini or create default if not exists."""
         if not os.path.exists(CONFIG_FILE):
@@ -306,6 +370,8 @@ class App(ctk.CTk):
         self.source_language.set(self.config.get('Settings', 'source_language', fallback='en'))
         self.transcription_timeout.set(self.config.get('Settings', 'transcription_timeout', fallback='5'))
         self.workers.set(self.config.get('Settings', 'workers', fallback='4'))
+        self.filter_hallucinations.set(self.config.getboolean('Settings', 'filter_hallucinations', fallback=True))
+        self.store_output.set(self.config.getboolean('Settings', 'store_output', fallback=True))
 
     def save_config(self, *args):
         """Save the current settings to config.ini."""
@@ -317,6 +383,8 @@ class App(ctk.CTk):
         self.config['Settings']['workers'] = self.workers.get()
         self.config['Settings']['translation_enabled'] = str(self.translation_enabled.get())
         self.config['Settings']['source_language'] = self.source_language.get()
+        self.config['Settings']['filter_hallucinations'] = str(self.filter_hallucinations.get())
+        self.config['Settings']['store_output'] = str(self.store_output.get())
 
         # Save the sample rate of the selected device
         selected_device = self.device_selection.get()
@@ -364,10 +432,8 @@ class App(ctk.CTk):
             with open(transcriptions_path, 'w') as f:
                 pass  # Truncate the file to empty it
             print("transcriptions.txt has been emptied.", flush=True)
-            self.enqueue_console_message("transcriptions.txt has been emptied.")
         except Exception as e:
             print(f"Error emptying transcriptions.txt: {e}", flush=True)
-            self.enqueue_console_message(f"Error emptying transcriptions.txt: {e}")
 
         self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
         intelligent = self.intelligent_mode.get()
@@ -399,6 +465,12 @@ class App(ctk.CTk):
         args.extend(["--source-language", self.source_language.get()])
         args.extend(["--transcription-timeout", self.transcription_timeout.get()])
         args.extend(["--workers", self.workers.get()])
+
+        filter_hallucinations = self.filter_hallucinations.get()
+        store_output = self.store_output.get()
+
+        args.extend(["--filter-hallucinations", str(filter_hallucinations)])
+        args.extend(["--store-output", str(store_output)])
 
         # If running in a frozen state, ensure subprocess handles executable correctly
         self.process = subprocess.Popen(
@@ -548,6 +620,14 @@ class App(ctk.CTk):
     def open_feedback_link(self):
         """Open the feedback link in default web browser"""
         webbrowser.open("https://github.com/evermoving/SystemCaptioner/issues")
+
+    def open_file(self, filename):
+        """Open a file with the default application."""
+        os.startfile(filename)
+
+    def open_url(self, url):
+        """Open a URL in the default web browser."""
+        webbrowser.open(url)
 
 if __name__ == "__main__":
     app = App()

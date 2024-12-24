@@ -71,17 +71,24 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
         print(f"Error during processing: {e}", flush=True)
         return ""
 
-def save_transcription(transcription, output_path):
+def save_transcription(transcription, output_path, filter_hallucinations, store_output):
     """
     Save the transcription text to a file and send it to the GUI.
     
     Args:
         transcription (str): The transcribed text.
         output_path (str): Path to the output transcription file.
+        filter_hallucinations (bool): Whether to filter hallucinations.
+        store_output (bool): Whether to store the output in a file.
     """
-    with open(output_path, "a", encoding='utf-8') as f:
-        f.write(transcription + "\n")
-    print(f"Output saved to {output_path}", flush=True)
+    if filter_hallucinations:
+        transcription = filter_hallucination_content(transcription)
+    
+    if store_output:
+        with open(output_path, "a", encoding='utf-8') as f:
+            f.write(transcription + "\n")
+        print(f"Output saved to {output_path}", flush=True)
+    
     # Send transcription to GUI queue
     transcription_queue.put(transcription)
 
@@ -101,13 +108,13 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
     print(f"Using {args.workers} workers thread...", flush=True)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.workers)  # Allows parallel processing
 
-    print(f"Starting transcribe_and_save with translation_enabled: {args.translation_enabled} and source_language: {args.source_language}...", flush=True)
+    print(f"Starting transcribe_and_save with translation_enabled: {args.translation_enabled} | source_language: {args.source_language} | filter_hallucinations: {args.filter_hallucinations} | store_output: {args.store_output}...", flush=True)
 
     while True:
         for filename in os.listdir(input_dir):
             file_path = os.path.join(input_dir, filename)
             if file_path not in processed_files:
-                executor.submit(transcribe_and_save, model, file_path, output_path, args.translation_enabled, args.source_language)
+                executor.submit(transcribe_and_save, model, file_path, output_path, args.translation_enabled, args.source_language, args.filter_hallucinations, args.store_output)
                 processed_files.add(file_path)
         time.sleep(check_interval)
 
@@ -155,12 +162,12 @@ def filter_hallucination_content(input_string):
         return input_string
 
 
-def transcribe_and_save(model, file_path, output_path, translation_enabled, source_language):
+def transcribe_and_save(model, file_path, output_path, translation_enabled, source_language, filter_hallucinations, store_output):
     try:
         print(f"Transcribing/translating {file_path}...", flush=True)
         transcription = transcribe_audio(model, file_path, translation_enabled, source_language)
         if transcription:
-            save_transcription(filter_hallucination_content(transcription), output_path)
+            save_transcription(transcription, output_path, filter_hallucinations, store_output)
     except Exception as e:
         print(f"Can't transcribe/translate audio chunk {file_path}: {e}", flush=True)
 
