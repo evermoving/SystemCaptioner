@@ -58,8 +58,8 @@ if __name__ == "__main__":
     parser.add_argument('--workers', type=int, default=4, help='Number of worker threads')
     parser.add_argument('--translation-enabled', action='store_true', help='Enable translation')
     parser.add_argument('--source-language', type=str, default='en', help='Source language for transcription')
-    parser.add_argument('--filter-hallucinations', type=bool, default=False, help='Filter hallucinations using hallucinations.txt')
-    parser.add_argument('--store-output', type=bool, default=True, help='Store transcription output in transcriptions.txt')
+    parser.add_argument('--filter-hallucinations', action='store_true', help='Filter hallucinations using hallucinations.txt')
+    parser.add_argument('--store-output', action='store_true', help='Store transcription output in transcriptions.txt')
     args = parser.parse_args()
 
     # Update config with the selected model

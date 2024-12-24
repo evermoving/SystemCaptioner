@@ -419,13 +419,13 @@ class App(ctk.CTk):
                     if os.path.isfile(file_path):
                         os.remove(file_path)
                 print("Existing recordings have been deleted.", flush=True)
-                self.enqueue_console_message("Existing recordings have been deleted.")
+                # self.enqueue_console_message("Existing recordings have been deleted.")
             except Exception as e:
                 print(f"Error deleting recordings: {e}", flush=True)
-                self.enqueue_console_message(f"Error deleting recordings: {e}")
+                # self.enqueue_console_message(f"Error deleting recordings: {e}")
         else:
             print("Recordings directory does not exist. Creating one.", flush=True)
-            self.enqueue_console_message("Recordings directory does not exist. Creating one.")
+            # self.enqueue_console_message("Recordings directory does not exist. Creating one.")
             os.makedirs(recordings_path)
 
         try:
@@ -462,15 +462,18 @@ class App(ctk.CTk):
         # Add translation settings before process creation
         if self.translation_enabled.get():
             args.append("--translation-enabled")
+
+        if self.filter_hallucinations.get():
+            args.append("--filter-hallucinations")
+
+        if self.store_output.get():
+            args.append("--store-output")
+
         args.extend(["--source-language", self.source_language.get()])
         args.extend(["--transcription-timeout", self.transcription_timeout.get()])
         args.extend(["--workers", self.workers.get()])
 
-        filter_hallucinations = self.filter_hallucinations.get()
-        store_output = self.store_output.get()
 
-        args.extend(["--filter-hallucinations", str(filter_hallucinations)])
-        args.extend(["--store-output", str(store_output)])
 
         # If running in a frozen state, ensure subprocess handles executable correctly
         self.process = subprocess.Popen(
@@ -493,13 +496,25 @@ class App(ctk.CTk):
         self.TRANSCRIPTION_TIMEOUT = int(self.transcription_timeout.get())
         workers = int(self.workers.get())
         translation_enabled = self.translation_enabled.get()
+        filter_hallucinations = self.filter_hallucinations.get()
+        store_output = self.store_output.get()
         source_language = self.source_language.get()
 
         args.extend(["--transcription-timeout", str(self.TRANSCRIPTION_TIMEOUT)])
         args.extend(["--workers", str(workers)])
         if translation_enabled:
             args.append("--translation-enabled")
+
+        if filter_hallucinations:
+            args.append("--filter-hallucinations")
+
+        if store_output:
+            args.append("--store-output")
+
+
         args.extend(["--source-language", source_language])
+
+
 
     def stop_app(self):
         if self.process:
