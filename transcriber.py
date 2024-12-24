@@ -145,7 +145,11 @@ def filter_hallucination_content(input_string):
             initial_string = filtered_string
             for blacklisted in blacklisted_lines:
                 pattern = re.compile(re.escape(blacklisted), re.IGNORECASE)
-                filtered_string = pattern.sub('', filtered_string)
+                matches = pattern.findall(filtered_string)
+                if matches:
+                    for match in matches:
+                        print(f"Detected blacklisted text: '{match}'", flush=True)
+                    filtered_string = pattern.sub('', filtered_string)
 
             # If no changes were made, exit the loop
             if initial_string == filtered_string:
@@ -153,7 +157,11 @@ def filter_hallucination_content(input_string):
 
         # Remove awkward spaces (e.g., extra spaces between words)
         filtered_string = re.sub(r'\s+', ' ', filtered_string).strip()
-        print(f"String \'{input_string}\' filtered as hallucination text detected", flush=True)
+
+        # Remove unnecessary new lines
+        filtered_string = re.sub(r'\s*\n\s*', ' ', filtered_string).strip()
+
+        print(f"String '{input_string}' filtered as hallucination text detected", flush=True)
 
         return filtered_string
 
