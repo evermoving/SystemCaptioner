@@ -14,25 +14,27 @@ logger = logging.getLogger(__name__)
 config = configparser.ConfigParser()
 config.read("config.ini")
 
-# Convert the sample rate to a float first, then to an integer
-SAMPLE_RATE = int(float(config.get('Settings', 'sample_rate', fallback='16000')))  # Default to 16000 if not set
+# Get the sample rate from the config, defaulting to 16000
+SAMPLE_RATE = int(float(config.get('Settings', 'sample_rate', fallback='16000')))
 
 # Constants
-CHUNK = 2048  # Number of frames per buffer
-FORMAT = pyaudio.paInt16  # 16-bit resolution
-CHANNELS = 2  # Stereo
-RECORD_SECONDS = 3  # Record in 2-second intervals
-OUTPUT_DIR = "recordings"  # Directory to save recordings
-MAX_FILES = 100  # Maximum number of files to keep
+CHUNK = 2048
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+RECORD_SECONDS = 3
+OUTPUT_DIR = "recordings"
+MAX_FILES = 100
 
-def get_default_loopback_device(p):
+
+def get_default_loopback_device(audio_interface):
     """Get the default loopback device."""
-    return p.get_default_wasapi_loopback()
+    return audio_interface.get_default_wasapi_loopback()
+
 
 def save_audio(frames, filename):
     """Save the recorded audio frames to a WAV file."""
-    if not frames:  # Check if frames is empty
-        print(f"Warning: No audio data to save for {filename}")
+    if not frames:
+        logger.warning(f"No audio data to save for {filename}")
         return
     with wave.open(filename, 'wb') as wf:
         wf.setnchannels(CHANNELS)
@@ -40,25 +42,26 @@ def save_audio(frames, filename):
         wf.setframerate(SAMPLE_RATE)
         wf.writeframes(b''.join(frames))
 
+
 def cleanup_old_files():
     """Delete old WAV files, keeping only the most recent MAX_FILES."""
     files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.wav')]
     files.sort(key=lambda x: os.path.getmtime(os.path.join(OUTPUT_DIR, x)), reverse=True)
-    
+
     for old_file in files[MAX_FILES:]:
         os.remove(os.path.join(OUTPUT_DIR, old_file))
-        print(f"Deleted old file: {old_file}")
+        logger.info(f"Deleted old file: {old_file}")
+
 
 def get_audio_devices():
     """Get all available WASAPI loopback devices."""
     devices = []
     try:
-        p = pyaudio.PyAudio()
-        wasapi_info = p.get_host_api_info_by_type(pyaudio.paWASAPI)
-        
-        for i in range(p.get_device_count()):
-            device_info = p.get_device_info_by_index(i)
-            # Check if the device is a loopback device
+        audio_interface = pyaudio.PyAudio()
+        wasapi_info = audio_interface.get_host_api_info_by_type(pyaudio.paWASAPI)
+
+        for i in range(audio_interface.get_device_count()):
+            device_info = audio_interface.get_device_info_by_index(i)
             if device_info.get('hostApi') == wasapi_info['index'] and device_info.get('isLoopbackDevice', False):
                 devices.append({
                     'index': i,
@@ -67,11 +70,12 @@ def get_audio_devices():
                     'maxInputChannels': device_info.get('maxInputChannels', 2)
                 })
                 logger.info(f"Found loopback audio device: {device_info.get('name')} (Index: {i})")
-        
-        p.terminate()
+
+        audio_interface.terminate()
     except Exception as e:
         logger.error(f"Error getting audio devices: {e}")
     return devices
+
 
 def record_audio(device_index=None):
     """Record audio from the specified or default speaker and save it to a file."""
@@ -80,30 +84,27 @@ def record_audio(device_index=None):
         logger.info(f"Created output directory: {OUTPUT_DIR}")
 
     try:
-        with pyaudio.PyAudio() as p:
-            # Get the specified or default loopback device
+        with pyaudio.PyAudio() as audio_interface:
             if device_index is not None:
-                device_info = p.get_device_info_by_index(device_index)
+                device_info = audio_interface.get_device_info_by_index(device_index)
                 logger.info(f"Using selected device: {device_info.get('name')} (Index: {device_index})")
             else:
-                device_info = get_default_loopback_device(p)
+                device_info = get_default_loopback_device(audio_interface)
                 device_index = device_info['index']
                 logger.info(f"Using default loopback device: {device_info.get('name')} (Index: {device_index})")
 
-            # Log device properties
             logger.info(f"Device properties: {device_info}")
-            
+
             try:
-                # Open the stream with the detected sample rate
-                stream = p.open(format=FORMAT,
-                                channels=CHANNELS,
-                                rate=SAMPLE_RATE,
-                                input=True,
-                                frames_per_buffer=CHUNK,
-                                input_device_index=device_index)
-                
+                stream = audio_interface.open(format=FORMAT,
+                                              channels=CHANNELS,
+                                              rate=SAMPLE_RATE,
+                                              input=True,
+                                              frames_per_buffer=CHUNK,
+                                              input_device_index=device_index)
+
                 logger.info("Audio stream opened successfully")
-                
+
                 while True:
                     frames = []
                     for _ in range(0, int(SAMPLE_RATE / CHUNK * RECORD_SECONDS)):
@@ -129,5 +130,7 @@ def record_audio(device_index=None):
         logger.error(f"Critical error in record_audio: {e}")
         raise
 
+
 if __name__ == "__main__":
     record_audio()
+

@@ -3,32 +3,43 @@ import subprocess
 import sys
 import os
 import threading
-import queue  # New import for queue
-import time   # New import for sleep
-import configparser  # New import for config handling
-import webbrowser  # Add this import at the top
-
-from console import ConsoleWindow, QueueWriter  # Importing ConsoleWindow and QueueWriter from console.py
-from setupGUI import run_setup  # Add this import at the top
+import queue
+import time
+import configparser
+import webbrowser
+from console import ConsoleWindow, QueueWriter
+from setupGUI import run_setup
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
 # Constants
 CONFIG_FILE = "config.ini"
+TOOLTIP_WRAP_LENGTH = 150
+TOOLTIP_BG_COLOR = "#2e2e2e"
+TOOLTIP_TEXT_COLOR = "white"
+DEFAULT_SOURCE_LANGUAGE = "en"
+DEFAULT_TRANSCRIPTION_TIMEOUT = "5"
+DEFAULT_WORKERS = "4"
+FEEDBACK_LINK = "https://github.com/evermoving/SystemCaptioner/issues"
+LANGUAGE_CODES_LINK = "https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes"
+CONTROLLER_DIR = "Controller" if getattr(sys, 'frozen', False) else "."
+CONTROLLER_EXECUTABLE = 'Controller.exe' if getattr(sys, 'frozen', False) else 'controller.py'
+
 
 class ToolTip:
     """
-    It creates a tooltip for a given widget as the mouse goes on it.
+    Creates a tooltip for a given widget as the mouse goes on it.
     """
+
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
         self.tooltip_window = None
-        self.widget.bind("<Enter>", self.show_tooltip)
-        self.widget.bind("<Leave>", self.hide_tooltip)
+        self.widget.bind("<Enter>", self._show_tooltip)
+        self.widget.bind("<Leave>", self._hide_tooltip)
 
-    def show_tooltip(self, event=None):
+    def _show_tooltip(self, event=None):
         if self.tooltip_window or not self.text:
             return
         x = self.widget.winfo_rootx() + 20
@@ -36,23 +47,28 @@ class ToolTip:
         self.tooltip_window = tw = ctk.CTkToplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = ctk.CTkLabel(tw, text=self.text, wraplength=150, bg_color="#2e2e2e", text_color="white")
+        label = ctk.CTkLabel(
+            tw,
+            text=self.text,
+            wraplength=TOOLTIP_WRAP_LENGTH,
+            bg_color=TOOLTIP_BG_COLOR,
+            text_color=TOOLTIP_TEXT_COLOR,
+        )
         label.pack()
 
-    def hide_tooltip(self, event=None):
+    def _hide_tooltip(self, event=None):
         tw = self.tooltip_window
         self.tooltip_window = None
         if tw:
             tw.destroy()
 
+
 def get_base_path():
-    """Get the base path for the application in both dev and standalone environments"""
+    """Get the base path for the application in both dev and standalone environments."""
     if getattr(sys, 'frozen', False):
-        # Running in a bundle (standalone)
         return os.path.dirname(sys.executable)
-    else:
-        # Running in normal Python environment
-        return os.path.dirname(os.path.abspath(__file__))
+    return os.path.dirname(os.path.abspath(__file__))
+
 
 class App(ctk.CTk):
     def __init__(self):
@@ -61,212 +77,197 @@ class App(ctk.CTk):
         self.geometry("650x585")
         self.resizable(True, True)
 
-        # Add icon to the main window
+        # Load the application icon
         icon_path = os.path.join(get_base_path(), "icon.ico")
         self.iconbitmap(icon_path)
 
+        # Initialize variables for app state and settings
         self.intelligent_mode = ctk.BooleanVar()
         self.gpu_enabled = ctk.BooleanVar()
         self.model_selection = ctk.StringVar()
         self.app_running = False
         self.process = None
-
         self.translation_enabled = ctk.BooleanVar()
-        self.source_language = ctk.StringVar(value="en")
-        self.transcription_timeout = ctk.StringVar(value="5")
-        self.workers = ctk.StringVar(value="4")
-
+        self.source_language = ctk.StringVar(value=DEFAULT_SOURCE_LANGUAGE)
+        self.transcription_timeout = ctk.StringVar(value=DEFAULT_TRANSCRIPTION_TIMEOUT)
+        self.workers = ctk.StringVar(value=DEFAULT_WORKERS)
         self.filter_hallucinations = ctk.BooleanVar()
         self.store_output = ctk.BooleanVar()
-
-        # Redirect stdout and stderr to the console queue
         self.console_queue = queue.Queue()
-        sys.stdout = QueueWriter(self.console_queue)
-        sys.stderr = QueueWriter(self.console_queue)
-
-        # Initialize the console window
         self.console_window = ConsoleWindow(self.console_queue, self)
         self.console_window.withdraw()  # Start hidden
-
         self.config = configparser.ConfigParser()
-        self.load_config()
+        self._load_config()
 
-        # Initialize variables with config values
+        # Set initial values from config
         self.intelligent_mode.set(self.config.getboolean('Settings', 'mode'))
         self.gpu_enabled.set(self.config.getboolean('Settings', 'cuda'))
         self.model_selection.set(self.config.get('Settings', 'model'))
 
-        self.start_button = ctk.CTkButton(self, text="Start", command=self.toggle_app, fg_color="green", hover_color="dark green")
+        # Redirect stdout and stderr
+        sys.stdout = QueueWriter(self.console_queue)
+        sys.stderr = QueueWriter(self.console_queue)
+
+        # Initialize main UI elements
+        self._init_ui()
+
+        # Setup timeout monitoring
+        self.TRANSCRIPTION_TIMEOUT = 5  # seconds
+        self.last_transcription_start = 0
+        self.current_transcription_file = None
+        self.timeout_thread = None
+        self.stop_timeout = threading.Event()
+
+        # Add this line after super().__init__()
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def _init_ui(self):
+        """Initializes the main UI elements."""
+        # Start/Stop button
+        self.start_button = ctk.CTkButton(
+            self, text="Start", command=self.toggle_app, fg_color="green", hover_color="dark green"
+        )
         self.start_button.pack(pady=(25, 10))
 
-        self.console_button = ctk.CTkButton(self, text="Console", command=self.open_console, fg_color="blue", hover_color="dark blue")
+        # Console button
+        self.console_button = ctk.CTkButton(
+            self, text="Console", command=self.open_console, fg_color="blue", hover_color="dark blue"
+        )
         self.console_button.pack(pady=(0, 25))
 
+        # Checkbox frame
         self.checkbox_frame = ctk.CTkFrame(self)
         self.checkbox_frame.pack(pady=(0, 10))
 
+        # Inner checkbox frame for organization
         self.inner_checkbox_frame = ctk.CTkFrame(self.checkbox_frame)
         self.inner_checkbox_frame.pack()
 
+        # Intelligent mode checkbox
         self.intelligent_checkbox = ctk.CTkCheckBox(
-            self.inner_checkbox_frame, 
+            self.inner_checkbox_frame,
             text="Intelligent Mode",
             variable=self.intelligent_mode,
-            command=self.save_config
+            command=self._save_config,
         )
         self.intelligent_checkbox.grid(row=0, column=0, sticky="w", padx=(0, 10))
 
-        self.intelligent_tooltip_button = ctk.CTkButton(
+        # Intelligent mode tooltip button
+        self._create_tooltip_button(
             self.inner_checkbox_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.intelligent_tooltip_button.grid(row=0, column=1)
-        ToolTip(
-            self.intelligent_tooltip_button, 
-            "In intelligent mode, subtitle window is shown only when speech is detected."
+            row=0,
+            column=1,
+            tooltip_text="In intelligent mode, subtitle window is shown only when speech is detected."
         )
 
+        # GPU checkbox
         self.gpu_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame,
             text="Run on GPU",
             variable=self.gpu_enabled,
-            command=self.save_config
+            command=self._save_config,
         )
         self.gpu_checkbox.grid(row=1, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
 
-        self.gpu_tooltip_button = ctk.CTkButton(
+        # GPU tooltip button
+        self._create_tooltip_button(
             self.inner_checkbox_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.gpu_tooltip_button.grid(row=1, column=1, pady=(5, 0))
-        ToolTip(
-            self.gpu_tooltip_button, 
-            "Disabling this will run the app on CPU and result in much slower transcription."
+            row=1,
+            column=1,
+            tooltip_text="Disabling this will run the app on CPU and result in much slower transcription."
         )
 
+        # Translation checkbox
         self.translation_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame,
             text="Enable Translation",
             variable=self.translation_enabled,
-            command=self.save_config
+            command=self._save_config,
         )
         self.translation_checkbox.grid(row=2, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
 
-        self.translation_tooltip_button = ctk.CTkButton(
+        # Translation tooltip button
+        self._create_tooltip_button(
             self.inner_checkbox_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.translation_tooltip_button.grid(row=2, column=1, pady=(5, 0))
-        ToolTip(
-            self.translation_tooltip_button, 
-            "Enable this to translate the transcription to English."
+            row=2,
+            column=1,
+            tooltip_text="Enable this to translate the transcription to English."
         )
 
+        # Filter hallucinations checkbox
         self.filter_hallucinations_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame,
             text="Filter Hallucinations",
             variable=self.filter_hallucinations,
-            command=self.save_config
+            command=self._save_config,
         )
         self.filter_hallucinations_checkbox.grid(row=3, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
 
-        self.filter_hallucinations_tooltip_button = ctk.CTkButton(
+        # Filter hallucinations tooltip button
+        self._create_tooltip_button(
             self.inner_checkbox_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=lambda: self.open_file("hallucinations.txt")
-        )
-        self.filter_hallucinations_tooltip_button.grid(row=3, column=1, pady=(5, 0))
-        ToolTip(
-            self.filter_hallucinations_tooltip_button,
-            "Enable this to filter hallucinations using hallucinations.txt file."
+            row=3,
+            column=1,
+            tooltip_text="Enable this to filter hallucinations using hallucinations.txt file.",
+            command=lambda: self._open_file("hallucinations.txt"),
         )
 
+        # Store output checkbox
         self.store_output_checkbox = ctk.CTkCheckBox(
             self.inner_checkbox_frame,
             text="Store Output",
             variable=self.store_output,
-            command=self.save_config
+            command=self._save_config,
         )
         self.store_output_checkbox.grid(row=4, column=0, sticky="w", padx=(0, 10), pady=(5, 0))
 
-        self.store_output_tooltip_button = ctk.CTkButton(
+        # Store output tooltip button
+        self._create_tooltip_button(
             self.inner_checkbox_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.store_output_tooltip_button.grid(row=4, column=1, pady=(5, 0))
-        ToolTip(
-            self.store_output_tooltip_button,
-            "Enable this to store the transcription output in transcriptions.txt."
+            row=4,
+            column=1,
+            tooltip_text="Enable this to store the transcription output in transcriptions.txt."
         )
 
+        # Model selection frame
         self.model_frame = ctk.CTkFrame(self)
         self.model_frame.pack(pady=(0, 10))
 
+        # Model label
         self.model_label = ctk.CTkLabel(self.model_frame, text="Model:")
         self.model_label.pack(side="left", padx=(0, 5))
 
+        # Model dropdown
         self.model_dropdown = ctk.CTkOptionMenu(
             self.model_frame,
             values=[
-                'tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 
-                'large-v1', 'large-v2', 'large-v3', 'large', 'distil-large-v2', 'distil-medium.en', 
+                'tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium',
+                'large-v1', 'large-v2', 'large-v3', 'large', 'distil-large-v2', 'distil-medium.en',
                 'distil-small.en', 'distil-large-v3', 'large-v3-turbo', 'turbo'
             ],
             variable=self.model_selection,
-            command=self.save_config  # Save config on change
+            command=self._save_config,
         )
         self.model_dropdown.pack(side="left")
 
-        self.model_tooltip_button = ctk.CTkButton(
+        # Model tooltip button
+        self._create_tooltip_button(
             self.model_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.model_tooltip_button.pack(side="left")
-        ToolTip(
-            self.model_tooltip_button, 
-            "Select the model to use for transcription. Larger models are more accurate but require more VRAM. .en are English only models"
+            tooltip_text="Select the model to use for transcription. Larger models are more accurate but require more VRAM. .en are English only models"
         )
 
-        # Add audio device selection frame
+        # Audio device frame
         self.device_frame = ctk.CTkFrame(self)
         self.device_frame.pack(pady=(0, 10))
 
+        # Audio device label
         self.device_label = ctk.CTkLabel(self.device_frame, text="Audio Device:")
         self.device_label.pack(side="left", padx=(0, 5))
 
-        self.devices = self.get_audio_devices()
+        # Audio devices dropdown
+        self.devices = self._get_audio_devices()
         self.device_names = [device['name'] for device in self.devices]
         self.device_selection = ctk.StringVar()
-
         # Load saved device from config
         saved_device = self.config.get('Settings', 'audio_device', fallback='')
         if saved_device in self.device_names:
@@ -278,140 +279,141 @@ class App(ctk.CTk):
             self.device_frame,
             values=self.device_names,
             variable=self.device_selection,
-            command=self.on_device_change  # Call this method when device changes
+            command=self._on_device_change,
         )
         self.device_dropdown.pack(side="left")
 
-        # Add this line after super().__init__()
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-        # Add these as class attributes
-        self.TRANSCRIPTION_TIMEOUT = 5  # seconds
-        self.last_transcription_start = 0
-        self.current_transcription_file = None
-        self.timeout_thread = None
-        self.stop_timeout = threading.Event()
-
-        # Add these after all other UI elements in __init__
+        # Feedback label
         self.feedback_label = ctk.CTkLabel(
             self,
             text="If the app didn't work or you had any issues, let us know!",
             text_color="light blue",
             cursor="hand2",
-            font=("", -13, "underline")  # Added underline to the font
+            font=("", -13, "underline"),
         )
         self.feedback_label.pack(side="bottom", pady=(0, 10))
-        self.feedback_label.bind("<Button-1>", lambda e: self.open_feedback_link())
+        self.feedback_label.bind("<Button-1>", lambda e: self._open_url(FEEDBACK_LINK))
 
+        # Timeout frame
         self.timeout_frame = ctk.CTkFrame(self)
         self.timeout_frame.pack(pady=(0, 10))
 
+        # Timeout label
         self.timeout_label = ctk.CTkLabel(self.timeout_frame, text="Transcription Timeout (seconds):")
         self.timeout_label.pack(side="left", padx=(0, 5))
 
+        # Timeout entry
         self.timeout_entry = ctk.CTkEntry(self.timeout_frame, textvariable=self.transcription_timeout)
         self.timeout_entry.pack(side="left")
 
+        # Workers frame
         self.workers_frame = ctk.CTkFrame(self)
         self.workers_frame.pack(pady=(0, 10))
 
+        # Workers label
         self.workers_label = ctk.CTkLabel(self.workers_frame, text="Workers:")
         self.workers_label.pack(side="left", padx=(0, 5))
 
+        # Workers entry
         self.workers_entry = ctk.CTkEntry(self.workers_frame, textvariable=self.workers)
         self.workers_entry.pack(side="left")
 
-        self.workers_tooltip_button = ctk.CTkButton(
+        # Workers tooltip
+        self._create_tooltip_button(
             self.workers_frame,
-            text="?",
-            width=25,
-            height=25,
-            fg_color="transparent",
-            hover_color="grey",
-            command=None
-        )
-        self.workers_tooltip_button.pack(side="left")
-        ToolTip(
-            self.workers_tooltip_button, 
-            "Number of worker threads for parallel processing."
+            tooltip_text="Number of worker threads for parallel processing."
         )
 
+        # Language frame
         self.language_frame = ctk.CTkFrame(self)
         self.language_frame.pack(pady=(0, 10))
 
+        # Language label
         self.language_label = ctk.CTkLabel(self.language_frame, text="Source Language:")
         self.language_label.pack(side="left", padx=(0, 5))
 
+        # Language entry
         self.language_entry = ctk.CTkEntry(self.language_frame, textvariable=self.source_language)
         self.language_entry.pack(side="left")
 
-        self.language_tooltip_button = ctk.CTkButton(
+        # Language tooltip
+        self._create_tooltip_button(
             self.language_frame,
+            tooltip_text="Specify the language used by the source audio using ISO-639-1 format (e.g., 'en' for English, 'zh' for Chinese).",
+            command=lambda: self._open_url(LANGUAGE_CODES_LINK)
+        )
+
+    def _create_tooltip_button(self, parent, row=None, column=None, tooltip_text="", command=None):
+        """Creates a tooltip button with the specified tooltip text."""
+        button = ctk.CTkButton(
+            parent,
             text="?",
             width=25,
             height=25,
             fg_color="transparent",
             hover_color="grey",
-            command=lambda: self.open_url("https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes")
+            command=command,
         )
-        self.language_tooltip_button.pack(side="left")
-        ToolTip(
-            self.language_tooltip_button,
-            "Specify the language used by the source audio using ISO-639-1 format (e.g., 'en' for English, 'zh' for Chinese)."
-        )
+        if row is not None and column is not None:
+            button.grid(row=row, column=column, pady=(5, 0))
+        else:
+            button.pack(side="left")
+        ToolTip(button, tooltip_text)
 
-    def load_config(self):
-        """Load the configuration from config.ini or create default if not exists."""
+    def _load_config(self):
+        """Loads configuration from config.ini or creates defaults if missing."""
         if not os.path.exists(CONFIG_FILE):
-            # Run setup GUI to get initial audio device selection
-            run_setup()
+            run_setup()  # Run setup for initial device selection
         self.config.read(CONFIG_FILE)
         self.translation_enabled.set(self.config.getboolean('Settings', 'translation_enabled', fallback=False))
-        self.source_language.set(self.config.get('Settings', 'source_language', fallback='en'))
-        self.transcription_timeout.set(self.config.get('Settings', 'transcription_timeout', fallback='5'))
-        self.workers.set(self.config.get('Settings', 'workers', fallback='4'))
+        self.source_language.set(self.config.get('Settings', 'source_language', fallback=DEFAULT_SOURCE_LANGUAGE))
+        self.transcription_timeout.set(
+            self.config.get('Settings', 'transcription_timeout', fallback=DEFAULT_TRANSCRIPTION_TIMEOUT))
+        self.workers.set(self.config.get('Settings', 'workers', fallback=DEFAULT_WORKERS))
         self.filter_hallucinations.set(self.config.getboolean('Settings', 'filter_hallucinations', fallback=True))
         self.store_output.set(self.config.getboolean('Settings', 'store_output', fallback=True))
 
-    def save_config(self, *args):
-        """Save the current settings to config.ini."""
-        self.config['Settings']['mode'] = str(self.intelligent_mode.get())
-        self.config['Settings']['cuda'] = str(self.gpu_enabled.get())
-        self.config['Settings']['model'] = self.model_selection.get()
-        self.config['Settings']['audio_device'] = self.device_selection.get()
-        self.config['Settings']['transcription_timeout'] = self.transcription_timeout.get()
-        self.config['Settings']['workers'] = self.workers.get()
-        self.config['Settings']['translation_enabled'] = str(self.translation_enabled.get())
-        self.config['Settings']['source_language'] = self.source_language.get()
-        self.config['Settings']['filter_hallucinations'] = str(self.filter_hallucinations.get())
-        self.config['Settings']['store_output'] = str(self.store_output.get())
-
+    def _save_config(self, *args):
+        """Saves current settings to config.ini."""
+        settings = self.config['Settings']
+        settings['mode'] = str(self.intelligent_mode.get())
+        settings['cuda'] = str(self.gpu_enabled.get())
+        settings['model'] = self.model_selection.get()
+        settings['audio_device'] = self.device_selection.get()
+        settings['transcription_timeout'] = self.transcription_timeout.get()
+        settings['workers'] = self.workers.get()
+        settings['translation_enabled'] = str(self.translation_enabled.get())
+        settings['source_language'] = self.source_language.get()
+        settings['filter_hallucinations'] = str(self.filter_hallucinations.get())
+        settings['store_output'] = str(self.store_output.get())
         # Save the sample rate of the selected device
         selected_device = self.device_selection.get()
         device_info = next((device for device in self.devices if device['name'] == selected_device), None)
         if device_info:
-            self.config['Settings']['sample_rate'] = str(device_info['defaultSampleRate'])
-
+            settings['sample_rate'] = str(device_info['defaultSampleRate'])
         with open(CONFIG_FILE, 'w') as configfile:
             self.config.write(configfile)
 
     def toggle_app(self):
+        """Toggles the application's start/stop state."""
         if not self.app_running:
-            self.start_app()
+            self._start_app()
             self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
         else:
-            self.stop_app()
+            self._stop_app()
             self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
 
-    def start_app(self):
-        # Reset the timeout tracking variables
+    def _start_app(self):
+        """Starts the captioning application."""
+        # Reset timeout tracking variables
         self.last_transcription_start = 0
         self.current_transcription_file = None
-        
+
         base_dir = get_base_path()
         recordings_path = os.path.join(base_dir, "recordings")
         transcriptions_path = os.path.join(base_dir, "transcriptions.txt")
 
+        # Ensure recordings directory exists and clear existing files
         if os.path.exists(recordings_path):
             try:
                 for filename in os.listdir(recordings_path):
@@ -419,47 +421,47 @@ class App(ctk.CTk):
                     if os.path.isfile(file_path):
                         os.remove(file_path)
                 print("Existing recordings have been deleted.", flush=True)
-                # self.enqueue_console_message("Existing recordings have been deleted.")
             except Exception as e:
                 print(f"Error deleting recordings: {e}", flush=True)
-                # self.enqueue_console_message(f"Error deleting recordings: {e}")
         else:
             print("Recordings directory does not exist. Creating one.", flush=True)
-            # self.enqueue_console_message("Recordings directory does not exist. Creating one.")
             os.makedirs(recordings_path)
 
+        # Clear the transcriptions file if it's not already empty
         try:
-            with open(transcriptions_path, 'w') as f:
-                pass  # Truncate the file to empty it
-            print("transcriptions.txt has been emptied.", flush=True)
-        except Exception as e:
-            print(f"Error emptying transcriptions.txt: {e}", flush=True)
+            if os.path.exists(transcriptions_path) and os.path.getsize(transcriptions_path) > 0:
+                with open(transcriptions_path, 'w') as f:
+                    pass  # Truncate the file
+                print("transcriptions.txt has been emptied.", flush=True)
+            elif os.path.exists(transcriptions_path) and os.path.getsize(transcriptions_path) == 0:
+                print("transcriptions.txt is already empty.", flush=True)
+            else:
+                print("transcriptions.txt does not exist.", flush=True)
 
+        except Exception as e:
+            print(f"Error handling transcriptions.txt: {e}", flush=True)
+
+        # Update the start button
         self.start_button.configure(text="Stop", fg_color="red", hover_color="dark red")
-        intelligent = self.intelligent_mode.get()
-        cuda = self.gpu_enabled.get()
-        model = self.model_selection.get()
-        
-        # Determine the path to the Controller executable
-        if getattr(sys, 'frozen', False):
-            controller_executable = os.path.join(base_dir, 'Controller', 'Controller.exe')
-        else:
-            controller_executable = os.path.join(base_dir, 'controller.py')
-        
+
+        # Construct the controller executable path
+        controller_executable = os.path.join(base_dir, CONTROLLER_DIR, CONTROLLER_EXECUTABLE)
+
+        # Build the command arguments
         args = [controller_executable]
-        if intelligent:
+        if self.intelligent_mode.get():
             args.append("--intelligent")
-        if cuda:
+        if self.gpu_enabled.get():
             args.append("--cuda")
-        args.extend(["--model", model])
-        
-        # Get the selected device index
+        args.extend(["--model", self.model_selection.get()])
+
+        # Get selected audio device index
         selected_device = self.device_selection.get()
         device_index = next((device['index'] for device in self.devices if device['name'] == selected_device), None)
         if device_index is not None:
             args.extend(["--device-index", str(device_index)])
 
-        # Add translation settings before process creation
+        # Add translation and filter settings
         if self.translation_enabled.get():
             args.append("--translation-enabled")
 
@@ -473,25 +475,24 @@ class App(ctk.CTk):
         args.extend(["--transcription-timeout", self.transcription_timeout.get()])
         args.extend(["--workers", self.workers.get()])
 
-
-
-        # If running in a frozen state, ensure subprocess handles executable correctly
+        # Launch the subprocess
         self.process = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # Merge stderr into stdout
+            stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
             universal_newlines=True
         )
         self.app_running = True
 
+        # Start monitoring threads
         self.stop_timeout.clear()
-        self.timeout_thread = threading.Thread(target=self.monitor_timeout, daemon=True)
+        self.timeout_thread = threading.Thread(target=self._monitor_timeout, daemon=True)
         self.timeout_thread.start()
 
-        threading.Thread(target=self.read_process_output, daemon=True).start()
-        threading.Thread(target=self.watch_console_queue, daemon=True).start()
+        threading.Thread(target=self._read_process_output, daemon=True).start()
+        threading.Thread(target=self._watch_console_queue, daemon=True).start()
 
         self.TRANSCRIPTION_TIMEOUT = int(self.transcription_timeout.get())
         workers = int(self.workers.get())
@@ -511,20 +512,16 @@ class App(ctk.CTk):
         if store_output:
             args.append("--store-output")
 
-
         args.extend(["--source-language", source_language])
 
-
-
-    def stop_app(self):
+    def _stop_app(self):
+        """Stops the captioning application."""
         if self.process:
             try:
                 self.process.terminate()
-                # Wait for a short time for graceful termination
-                self.process.wait(timeout=2)
+                self.process.wait(timeout=2)  # Give a short time for graceful termination
             except subprocess.TimeoutExpired:
-                # Force kill if process doesn't terminate gracefully
-                self.process.kill()
+                self.process.kill()  # Force kill if process doesn't terminate gracefully
             self.process = None
         self.start_button.configure(text="Start", fg_color="green", hover_color="dark green")
         self.app_running = False
@@ -533,27 +530,27 @@ class App(ctk.CTk):
             self.timeout_thread.join()
             self.timeout_thread = None
 
-    def monitor_timeout(self):
+    def _monitor_timeout(self):
+        """Monitors the transcription timeout and restarts the app if necessary."""
         while self.app_running and not self.stop_timeout.is_set():
             if self.last_transcription_start > 0:
                 elapsed_time = time.time() - self.last_transcription_start
                 if elapsed_time > self.TRANSCRIPTION_TIMEOUT:
                     error_msg = f"Transcription timeout for {self.current_transcription_file} after {self.TRANSCRIPTION_TIMEOUT} seconds"
-                    self.enqueue_console_message(f"controller.py ERROR: {error_msg}")
-                    self.stop_app()
-                    time.sleep(1)  # Give it a moment to clean up
-                    self.start_app()  # Restart the application
+                    self._enqueue_console_message(f"controller.py ERROR: {error_msg}")
+                    self._stop_app()
+                    time.sleep(1)
+                    self._start_app()
                     break
             time.sleep(1)
 
-    def read_process_output(self):
-        """Read and process lines from the subprocesses combined stdout and stderr."""
+    def _read_process_output(self):
+        """Reads and processes output from the subprocess."""
         if self.process.stdout:
             for line in iter(self.process.stdout.readline, ''):
                 if not line:
                     break
                 line = line.strip()
-
                 # Check for transcription start
                 if "Starting transcription for" in line:
                     self.last_transcription_start = time.time()
@@ -564,86 +561,80 @@ class App(ctk.CTk):
                     self.last_transcription_start = 0  # Reset the timer
                     self.current_transcription_file = None
 
-                # Determine if the line is an error message
+                # Send messages to the console queue
                 if "ERROR" in line:
-                    self.enqueue_console_message(f"controller.py ERROR: {line}")
+                    self._enqueue_console_message(f"controller.py ERROR: {line}")
                 else:
-                    self.enqueue_console_message(f"controller.py: {line}")
+                    self._enqueue_console_message(f"controller.py: {line}")
 
-    def enqueue_console_message(self, message):
-        """Helper method to enqueue messages to the console queue."""
+    def _enqueue_console_message(self, message):
+        """Enqueues a message to the console queue."""
         self.console_queue.put(message)
 
     def open_console(self):
-        """Open the console window."""
+        """Opens the console window."""
         if not self.console_window or not self.console_window.winfo_exists():
             self.console_window = ConsoleWindow(self.console_queue, self)
         else:
             self.console_window.deiconify()
             self.console_window.focus()
 
-    def watch_console_queue(self):
-        """Continuously watch for console messages (if any additional handling is needed)."""
+    def _watch_console_queue(self):
+        """Monitors the console queue (placeholder for any additional console processing)."""
         while self.app_running:
-            time.sleep(1)  # Adjust the sleep duration as needed
+            time.sleep(1)
 
     def run(self):
-        """Run the main application loop."""
+        """Runs the main application loop."""
         self.mainloop()
 
-    def get_audio_devices(self):
-        """Get list of available audio devices."""
+    def _get_audio_devices(self):
+        """Gets a list of available audio devices."""
         from recorder import get_audio_devices
         return get_audio_devices()
 
-    def on_device_change(self, selected_device_name):
-        """Handle changes in the selected audio device."""
-        # Find the selected device info
+    def _on_device_change(self, selected_device_name):
+        """Handles changes in the selected audio device."""
         device_info = next((device for device in self.devices if device['name'] == selected_device_name), None)
         if device_info:
-            # Update the config with the new sample rate
             self.config['Settings']['sample_rate'] = str(device_info['defaultSampleRate'])
             self.config['Settings']['audio_device'] = selected_device_name
             with open(CONFIG_FILE, 'w') as configfile:
                 self.config.write(configfile)
 
     def on_closing(self):
-        """Handle cleanup when the window is closed."""
+        """Handles cleanup when the window is closed."""
         # Stop the application if it's running
         if self.app_running:
-            self.stop_app()
-        
-        # Ensure the process is terminated
+            self._stop_app()
+
+        # Ensure process is terminated
         if self.process:
             try:
                 self.process.terminate()
-                # Wait for a short time for graceful termination
                 self.process.wait(timeout=2)
             except subprocess.TimeoutExpired:
-                # Force kill if process doesn't terminate gracefully
                 self.process.kill()
             self.process = None
 
-        # Destroy the console window if it exists
+        # Destroy console window
         if self.console_window and self.console_window.winfo_exists():
             self.console_window.destroy()
 
-        # Destroy the main window
+        # Destroy main window
         self.quit()
         self.destroy()
 
-    def open_feedback_link(self):
-        """Open the feedback link in default web browser"""
-        webbrowser.open("https://github.com/evermoving/SystemCaptioner/issues")
-
-    def open_file(self, filename):
-        """Open a file with the default application."""
+    def _open_file(self, filename):
+        """Opens a file with the default application."""
         os.startfile(filename)
 
-    def open_url(self, url):
-        """Open a URL in the default web browser."""
+    def _open_url(self, url):
+        """Opens a URL in the default web browser."""
         webbrowser.open(url)
+
 
 if __name__ == "__main__":
     app = App()
     app.run()
+

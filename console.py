@@ -2,12 +2,13 @@ import customtkinter as ctk
 from tkinter import scrolledtext
 import queue
 
+
 class ConsoleWindow(ctk.CTkToplevel):
     def __init__(self, console_queue, master=None, icon_path=None):
         super().__init__(master)
         self.title("Console Output")
         self.geometry("900x450")
-        
+
         # Set the icon for the console window
         if icon_path:
             self.iconbitmap(icon_path)
@@ -47,8 +48,10 @@ class ConsoleWindow(ctk.CTkToplevel):
         self.text_area.configure(state='disabled')
         self.text_area.yview(ctk.END)
 
+
 class QueueWriter:
     """A writer object that redirects writes to a queue."""
+
     def __init__(self, log_queue):
         self.log_queue = log_queue
 

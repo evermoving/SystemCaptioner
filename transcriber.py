@@ -161,6 +161,9 @@ def filter_hallucination_content(input_string):
         # Remove unnecessary new lines
         filtered_string = re.sub(r'\s*\n\s*', ' ', filtered_string).strip()
 
+        if filtered_string == ".":
+            return ""
+
         print(f"String '{input_string}' filtered as hallucination text detected", flush=True)
 
         return filtered_string
@@ -181,3 +184,4 @@ def transcribe_and_save(model, file_path, output_path, translation_enabled, sour
 
 if __name__ == "__main__":
     monitor_audio_file(AUDIO_INPUT_DIR, TRANSCRIPTION_OUTPUT)
+

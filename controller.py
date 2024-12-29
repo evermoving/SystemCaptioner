@@ -2,32 +2,32 @@ import os
 import sys
 import ctypes
 import threading
-import recorder
-import transcriber
 import time
 import argparse
 import configparser
 
-# Update the import statement for the GUI
-from gui import SubtitleGUI  # No change needed
+# Import necessary modules from the project
+import recorder
+import transcriber
+from gui import SubtitleGUI
 
-# Change the hardcoded path to a relative path
+# Setup CUDA DLL path
 cuda_dll_path = os.path.join(os.path.dirname(__file__), "nvidia_dependencies")
 os.environ['PATH'] = f"{cuda_dll_path}{os.pathsep}{os.environ['PATH']}"
 sys.path.append(cuda_dll_path)
 
-# Explicitly add the DLL to the DLL search path
+# Add the DLL to the DLL search path
 os.add_dll_directory(cuda_dll_path)
 
+# Attempt to load the CUDA DLL
 try:
     ctypes.CDLL(os.path.join(cuda_dll_path, "cudnn_ops_infer64_8.dll"))
     print("Successfully loaded cudnn_ops_infer64_8.dll", flush=True)
 except Exception as e:
     print(f"Error loading cudnn_ops_infer64_8.dll: {e}", flush=True)
 
-def start_recording():
+def start_recording(device_index=None):
     """Start the audio recording process."""
-    device_index = args.device_index if hasattr(args, 'device_index') else None
     recorder.record_audio(device_index)
 
 def start_transcription(device, args):
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     device = "cuda" if args.cuda else "cpu"
 
     # Create threads for recording, transcription, and GUI
-    recording_thread = threading.Thread(target=start_recording, daemon=True)
+    recording_thread = threading.Thread(target=start_recording, args=(args.device_index,), daemon=True)
     transcription_thread = threading.Thread(target=start_transcription, args=(device, args), daemon=True)
     gui_thread = threading.Thread(target=start_gui, args=(transcription_queue, args.intelligent), daemon=True)
 
@@ -92,3 +92,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("Exiting program.", flush=True)
+

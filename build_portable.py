@@ -134,7 +134,7 @@ def build_portable():
             shutil.copy2(icon_src, icon_dest)
             print("icon.ico copied to root successfully")
 
-        # Copy hallucinations.txt to root folder of SystemCaptioner
+        # Copy hallucinations.txt to root folder of System Captioner
         if os.path.exists(hallucinations_file):
             hallucinations_dest = os.path.join(dist_system_captioner, 'hallucinations.txt')
             shutil.copy2(hallucinations_file, hallucinations_dest)
