@@ -339,7 +339,7 @@ class App(ctk.CTk):
         # Language tooltip
         self._create_tooltip_button(
             self.language_frame,
-            tooltip_text="Specify the language used by the source audio using ISO-639-1 format (e.g., 'en' for English, 'zh' for Chinese).",
+            tooltip_text="Specify the language used by the source audio using ISO-639-1 format (e.g., 'en' for English, 'zh' for Chinese). Click on the tooltip for full list.",
             command=lambda: self._open_url(LANGUAGE_CODES_LINK)
         )
 
