@@ -53,16 +53,22 @@ def transcribe_audio(model, audio_path, translation_enabled, source_language):
         # print(f"Translation mode: {'enabled' if translation_enabled else 'disabled'}", flush=True)
         # print(f"Source language: {source_language}", flush=True)
 
-        segments, _ = model.transcribe(
-            audio_path,
-            language=source_language,
-            task="translate" if translation_enabled else "transcribe",
-            beam_size=1,
-            vad_filter=True,
-            word_timestamps=True,
-            # initial_prompt=""
-            # suppress_tokens=[-1, 50363, 50364]
-        )
+        # Build the arguments dictionary
+        transcribe_args = {
+            "task": "translate" if translation_enabled else "transcribe",
+            "beam_size": 1,
+            "vad_filter": True,
+            "word_timestamps": True,
+            # "initial_prompt": "",
+            # "suppress_tokens": [-1, 50363, 50364]
+        }
+
+        # Add the language argument only if source_language is not an empty string
+        if source_language:
+            transcribe_args["language"] = source_language
+
+        # Pass audio_path as a positional argument and unpack the other arguments
+        segments, _ = model.transcribe(audio_path, **transcribe_args)
         
         transcription = " ".join(segment.text for segment in segments)
         print("Whisper processing completed.", flush=True)
@@ -108,7 +114,7 @@ def monitor_audio_file(input_dir, output_path, check_interval=0.5, device="cuda"
     print(f"Using {args.workers} workers thread...", flush=True)
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.workers)  # Allows parallel processing
 
-    print(f"Starting transcribe_and_save with translation_enabled: {args.translation_enabled} | source_language: {args.source_language} | filter_hallucinations: {args.filter_hallucinations} | store_output: {args.store_output}...", flush=True)
+    print(f"Starting transcribe_and_save with translation_enabled: {args.translation_enabled} | source_language: \"{args.source_language}\" | filter_hallucinations: {args.filter_hallucinations} | store_output: {args.store_output}...", flush=True)
 
     while True:
         for filename in os.listdir(input_dir):
@@ -131,7 +137,7 @@ def filter_hallucination_content(input_string):
     """
     try:
         # Read the blacklist from the file
-        with open('hallucinations.txt', 'r', encoding='utf-8') as file:
+        with open('filter_hallucinations.txt', 'r', encoding='utf-8') as file:
             blacklisted_lines = sorted(
                 [line.strip().lower() for line in file if line.strip()],
                 key=len,
@@ -164,7 +170,7 @@ def filter_hallucination_content(input_string):
         if filtered_string == ".":
             return ""
 
-        print(f"String '{input_string}' filtered as hallucination text detected", flush=True)
+        # print(f"String '{input_string}' filtered as hallucination text detected", flush=True)
 
         return filtered_string
 

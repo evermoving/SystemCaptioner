@@ -51,14 +51,14 @@ if __name__ == "__main__":
     parser.add_argument('--cuda', action='store_true', help='Enable CUDA for transcription')
     parser.add_argument('--model', type=str, choices=['tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium',
                 'large-v1', 'large-v2', 'large-v3', 'large', 'distil-large-v2', 'distil-medium.en',
-                'distil-small.en', 'distil-large-v3', 'large-v3-turbo', 'turbo'],
+                'distil-small.en', 'distil-large-v3'],
                         help='Select the model size for transcription')
     parser.add_argument('--device-index', type=int, help='Audio device index for recording')
     parser.add_argument('--transcription-timeout', type=int, default=5, help='Transcription timeout in seconds')
     parser.add_argument('--workers', type=int, default=4, help='Number of worker threads')
     parser.add_argument('--translation-enabled', action='store_true', help='Enable translation')
     parser.add_argument('--source-language', type=str, default='en', help='Source language for transcription')
-    parser.add_argument('--filter-hallucinations', action='store_true', help='Filter hallucinations using hallucinations.txt')
+    parser.add_argument('--filter-hallucinations', action='store_true', help='Filter hallucinations using filter_hallucinations.txt')
     parser.add_argument('--store-output', action='store_true', help='Store transcription output in transcriptions.txt')
     args = parser.parse_args()
 

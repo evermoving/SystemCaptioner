@@ -12,7 +12,7 @@ def build_portable():
     build_path = os.path.join(current_dir, 'build')
     nvidia_deps_path = os.path.join(current_dir, 'nvidia_dependencies')
     icon_path = os.path.join(current_dir, 'icon.ico')
-    hallucinations_file = os.path.join(current_dir, 'hallucinations.txt')
+    hallucinations_file = os.path.join(current_dir, 'filter_hallucinations.txt')
 
     # Get faster_whisper assets path
     faster_whisper_path = os.path.dirname(faster_whisper.__file__)
@@ -134,11 +134,11 @@ def build_portable():
             shutil.copy2(icon_src, icon_dest)
             print("icon.ico copied to root successfully")
 
-        # Copy hallucinations.txt to root folder of System Captioner
+        # Copy filter_hallucinations.txt to root folder of System Captioner
         if os.path.exists(hallucinations_file):
-            hallucinations_dest = os.path.join(dist_system_captioner, 'hallucinations.txt')
+            hallucinations_dest = os.path.join(dist_system_captioner, 'filter_hallucinations.txt')
             shutil.copy2(hallucinations_file, hallucinations_dest)
-            print("hallucinations.txt copied to root successfully")
+            print("filter_hallucinations.txt copied to root successfully")
 
         print("Post-build steps completed successfully!")
 

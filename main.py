@@ -18,7 +18,7 @@ CONFIG_FILE = "config.ini"
 TOOLTIP_WRAP_LENGTH = 150
 TOOLTIP_BG_COLOR = "#2e2e2e"
 TOOLTIP_TEXT_COLOR = "white"
-DEFAULT_SOURCE_LANGUAGE = "en"
+DEFAULT_SOURCE_LANGUAGE = ""
 DEFAULT_TRANSCRIPTION_TIMEOUT = "5"
 DEFAULT_WORKERS = "4"
 FEEDBACK_LINK = "https://github.com/evermoving/SystemCaptioner/issues"
@@ -208,8 +208,8 @@ class App(ctk.CTk):
             self.inner_checkbox_frame,
             row=3,
             column=1,
-            tooltip_text="Enable this to filter hallucinations using hallucinations.txt file.",
-            command=lambda: self._open_file("hallucinations.txt"),
+            tooltip_text="Enable this to filter hallucinations using filter_hallucinations.txt file.",
+            command=lambda: self._open_file("filter_hallucinations.txt"),
         )
 
         # Store output checkbox
@@ -243,7 +243,7 @@ class App(ctk.CTk):
             values=[
                 'tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium',
                 'large-v1', 'large-v2', 'large-v3', 'large', 'distil-large-v2', 'distil-medium.en',
-                'distil-small.en', 'distil-large-v3', 'large-v3-turbo', 'turbo'
+                'distil-small.en', 'distil-large-v3'
             ],
             variable=self.model_selection,
             command=self._save_config,
@@ -329,7 +329,7 @@ class App(ctk.CTk):
         self.language_frame.pack(pady=(0, 10))
 
         # Language label
-        self.language_label = ctk.CTkLabel(self.language_frame, text="Source Language:")
+        self.language_label = ctk.CTkLabel(self.language_frame, text="[Optional] Source Language:")
         self.language_label.pack(side="left", padx=(0, 5))
 
         # Language entry
