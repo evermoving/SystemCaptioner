@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import scrolledtext
-import threading
 import queue
 import time
+
 
 class SubtitleGUI:
     def __init__(self, update_queue, intelligent_mode=False):
@@ -12,10 +12,10 @@ class SubtitleGUI:
         self.should_show = False
 
         self.root = tk.Tk()
-        
+
         # Remove window decorations (frameless window)
         self.root.overrideredirect(True)
-        
+
         # Set window size and position
         window_width = 800
         window_height = 120
@@ -24,16 +24,16 @@ class SubtitleGUI:
         x_position = (screen_width // 2) - (window_width // 2)
         y_position = screen_height - window_height - 50  # 50 pixels above the bottom
         self.root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
-        
+
         # Make window semi-transparent
-        self.root.attributes("-alpha", 0.9)  # Range: 0.0 (fully transparent) to 1.0 (fully opaque)
-        
+        self.root.attributes("-alpha", 0.8)  # Range: 0.0 (fully transparent) to 1.0 (fully opaque)
+
         # Set window to be always on top
         self.root.attributes("-topmost", True)
-        
+
         # Set background color to dark grey
         self.root.configure(bg='#2e2e2e')  # Dark grey color
-        
+
         # ScrolledText widget for displaying subtitles
         self.text_area = scrolledtext.ScrolledText(
             self.root,
@@ -46,12 +46,12 @@ class SubtitleGUI:
         )
         self.text_area.pack(expand=True, fill='both')
         self.text_area.configure(state='disabled')
-        
+
         # Bind mouse events for dragging the window
         self.text_area.bind("<ButtonPress-1>", self.start_move)
         self.text_area.bind("<ButtonRelease-1>", self.stop_move)
         self.text_area.bind("<B1-Motion>", self.do_move)
-        
+
         # Variables to keep track of dragging
         self.offset_x = 0
         self.offset_y = 0
@@ -102,7 +102,8 @@ class SubtitleGUI:
     def display_transcription(self, transcription):
         """Insert the transcription into the text area."""
         self.text_area.configure(state='normal')
-        self.text_area.insert(tk.END, transcription + "\n")
+        self.text_area.tag_configure("center", justify='center')
+        self.text_area.insert(tk.END, transcription + "\n", "center")
         self.text_area.configure(state='disabled')
         self.text_area.yview(tk.END)
 
