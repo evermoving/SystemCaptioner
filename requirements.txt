@@ -1,6 +1,6 @@
-pyaudiowpatch
-faster-whisper
-customtkinter
-soundfile
-pyaudio
+pyaudiowpatch==0.2.12.6
+faster-whisper==1.1.0
+customtkinter==5.2.2
+soundfile==0.12.1
+pyaudio==0.2.14
 
